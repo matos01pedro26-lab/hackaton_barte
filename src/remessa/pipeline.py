@@ -15,13 +15,15 @@ from .regras import Classe, classificar, indexar_contratos
 from .saida import gravar, validar_rastro
 
 
-def executar(mes: str, dados: Path, saida: Path, config: Path) -> dict[str, int]:
+def executar(mes: str, dados: Path, saida: Path, config: Path,
+             faturadas: frozenset[str] = frozenset()) -> dict[str, int]:
+    """faturadas: Nº de operação já faturado em meses fechados; quem passa é o src.fechar, que lê o histórico."""
     cfg = carregar_config(config)
     ops = ler_operacoes(Path(dados) / "fato_ponte.csv")
     contratos = indexar_contratos(ler_contratos(Path(dados) / "dim_contrato_taxa.csv"))
     nomes = ler_nomes_lojistas(Path(dados) / "dim_lojista.csv")
 
-    classificadas = [classificar(op, mes, cfg) for op in ops]
+    classificadas = [classificar(op, mes, cfg, faturadas) for op in ops]
     comissoes, rastro_com, comissao_por_op = calcular_comissoes(classificadas, nomes, cfg, mes)
     total = sum((l["comissao_brl"] for l in comissoes), Decimal("0.00"))
     notas, rastro_nota = montar_nota(total, rastro_com, mes, cfg)

@@ -54,14 +54,14 @@ class FechamentoSetembro(unittest.TestCase):
     def test_comissao_por_lojista(self):
         por_cnpj = {c["cnpj"]: Decimal(c["comissao_brl"]) for c in self.comissoes}
         self.assertEqual(len(por_cnpj), 21)
-        # Com os ajustes tardios (P13): R$ 203.740,84 dos 20 com nota (HIPOTESES, seção 4) + Casa −5,50
+        # Com os ajustes tardios (P13): R$ 203.740,84 dos 20 com nota (HIPOTESES, seção 8) + Casa −5,50
         self.assertEqual(sum(por_cnpj.values()), Decimal("203735.34"))
         self.assertEqual(por_cnpj["95927868000148"], Decimal("15621.27"))  # Rota Global, pela taxa contratada
         self.assertEqual(por_cnpj["22224579000109"], Decimal("11769.74"))  # Bridge: duas vigências e 2 estornos tardios
         self.assertEqual(por_cnpj["00520815000100"], Decimal("-5.50"))     # Casa do Estudante, R8
 
     def test_divergencias_de_taxa(self):
-        # Alvo: HIPOTESES seção 4 (notebook do Pedro), cálculo independente deste módulo. A Casa não entra (R28).
+        # Alvo: HIPOTESES seção 8 (notebook do Pedro), cálculo independente deste módulo. A Casa não entra (R28).
         por_cnpj = defaultdict(lambda: [0, Decimal("0")])
         for d in self.divergencias:
             por_cnpj[d["cnpj"]][0] += 1
@@ -97,16 +97,15 @@ class FechamentoSetembro(unittest.TestCase):
         p = {x["id_saida"].replace("PEN-CHK-2026-09-", ""): (Decimal(x["valor_brl"]), x["quem_decide"])
              for x in self.pendencias}
         self.assertEqual(p, {
-            "CADASTRO_CONDICAO-00520815000100-TODAS": (Decimal("15397.42"), "Financeiro"),  # o que a planilha cobraria
-            "CADASTRO_EC-1038867654": (Decimal("10886.22"), "Financeiro"),  # Kiwi, com a venda tardia
-            "CADASTRO_EC-1043300981": (Decimal("7767.78"), "Financeiro"),
-            "CADASTRO_EC-1043396662": (Decimal("9014.42"), "Financeiro"),
+            "CADASTRO_CONDICAO-00520815000100-TODAS": (Decimal("15397.42"), "Comercial"),  # o que a planilha cobraria
+            "CADASTRO_EC-1038867654": (Decimal("10886.22"), "Comercial"),  # Kiwi, com a venda tardia
+            "CADASTRO_EC-1043300981": (Decimal("7767.78"), "Comercial"),
+            "CADASTRO_EC-1043396662": (Decimal("9014.42"), "Comercial"),
             "COMISSAO_NAO_POSITIVA-00520815000100": (Decimal("-5.50"), "Financeiro"),
             "CONTESTACAO_ORBE-22224579000109": (Decimal("29.95"), "Financeiro"),             # Bridge (R29)
             "CONTESTACAO_ORBE-95927868000148": (Decimal("1546.28"), "Financeiro"),           # Rota Global (R9, R29)
             "DEVOLUCAO_CONDICAO-00520815000100-TODAS": (Decimal("15396.77"), "Financeiro"),  # Casa (R28)
-            "EC_RETIDO-1076801732": (Decimal("262138.61"), "Comercial"),                     # Atlas (R7)
-            "TAXA_A_CONFIRMAR-03229837000103-pix": (Decimal("9.16"), "Comercial"),  # Fluente (P15): 81,33 a 0,89% − 72,17
+            "EC_RETIDO-1076801732": (Decimal("262138.61"), "Comercial (Diego)"),                     # Atlas (R7)
         })
         for x in self.pendencias:  # ref_origem = transações da Orbe separadas por "|", como na remessa
             self.assertTrue(all(ref.startswith(("TX", "AN")) for ref in x["ref_origem"].split("|")), x["id_saida"])

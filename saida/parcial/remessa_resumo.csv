@@ -5,6 +5,7 @@ operacoes_normal;228
 operacoes_ajuste;0
 operacoes_spread_negativo;4
 operacoes_duplicata;1
+operacoes_ja_faturada;0
 operacoes_fora_competencia;0
 total_participacao_brl;39543.45
 tolerancia_brl;0

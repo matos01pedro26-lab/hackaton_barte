@@ -91,7 +91,6 @@ def notas_checkout(comissoes: list[dict], pendencias: list[dict], rastro: list[d
     por_id: dict[str, list[dict]] = {}
     for r in rastro:
         por_id.setdefault(r["id_saida"], []).append(r)
-    taxa_a_confirmar = [p for p in pendencias if p["tipo"] == "TAXA_A_CONFIRMAR"]
     notas, rastro_notas = [], []
     for c in sorted(comissoes, key=lambda c: c["cnpj"]):
         if c["linha_negocio"] != "CHECKOUT" or c["comissao_brl"] <= 0:
@@ -99,11 +98,6 @@ def notas_checkout(comissoes: list[dict], pendencias: list[dict], rastro: list[d
         id_nota = f"NF-CHK-{mes}-{c['cnpj']}"
         texto = (f"Taxa de processamento de pagamentos (MDR) e de antecipação, competência {mm}/{ano}. "
                  f"RAZÃO SOCIAL A CONFERIR (nome da planilha de taxas)")
-        for p in taxa_a_confirmar:
-            if c["cnpj"] in p["id_saida"]:
-                pct = re.findall(r"\d,\d{2}%", p["motivo"])
-                par = f" ({pct[0]} x {pct[1]})" if len(pct) >= 2 else ""
-                texto += f". TAXA A CONFIRMAR{par}: ver pendência {p['id_saida']}"
         notas.append({"id_saida": id_nota, "tomador_cnpj": c["cnpj"], "tomador": c["lojista"],
                       "linha_negocio": "CHECKOUT", "valor_brl": c["comissao_brl"], "discriminacao": texto})
         rastro_notas += [{**r, "id_saida": id_nota, "ref_original": r.get("ref_original", "")} for r in por_id[c["id_saida"]]]

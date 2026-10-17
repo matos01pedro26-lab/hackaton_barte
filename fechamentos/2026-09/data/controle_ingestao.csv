@@ -1,0 +1,68 @@
+tipo;fonte;item;valor;detalhe
+ARQUIVO;orbe;arquivo;01_orbe_relatorio_comissoes_set2026.csv;"lote=BASE; encoding=utf-8"
+ARQUIVO;orbe;sha256;fdbc2bad2dd38dde8bf3af9d5c1f21116f0eae8d71d6a5a16b0dfd82de3cc7ec;01_orbe_relatorio_comissoes_set2026.csv
+CONTAGEM;orbe;linhas_lidas;1943;01_orbe_relatorio_comissoes_set2026.csv (lote BASE)
+ARQUIVO;orbe;arquivo;06_orbe_ajustes_tardios_set2026.csv;"lote=TARDIO; encoding=utf-8"
+ARQUIVO;orbe;sha256;b1cfd183945fb194e05cfbe9455ab364c31b676427e6653562f6821f57240292;06_orbe_ajustes_tardios_set2026.csv
+CONTAGEM;orbe;linhas_lidas;14;06_orbe_ajustes_tardios_set2026.csv (lote TARDIO)
+VERIFICACAO;orbe;ajustes_tardios_apontam_para_linha_existente;OK;14 linhas fora da base, todas com origem encontrada
+VERIFICACAO;orbe;ajustes_tardios_com_valor_oposto_mesma_taxa_e_mesmo_ec;OK;valor oposto, mesma taxa e mesmo EC da linha original
+VERIFICACAO;orbe;venda_estornada_ou_revertida_mais_de_uma_vez;OK;cada linha original é estornada ou revertida no máximo uma vez
+CONTAGEM;orbe;liquido_do_lote_TARDIO;-142565.06;"14 linhas; efeito no líquido reportado (ESTORNO=10, REVERSAO ANTECIPACAO=3, VENDA=1)"
+ARQUIVO;tabela_taxas;arquivo;02_tabela_taxas_contratadas.xlsx;"aba=Taxas vigentes; abas ignoradas=['ANTIGO 2025 - nao usar']"
+ARQUIVO;tabela_taxas;sha256;d0c7d2b13ac41c2a036a40362eb26c341666feef74d7199284742c255885dfc4;
+CONTAGEM;tabela_taxas;linhas_lidas;25;
+CONTAGEM;tabela_taxas;comentarios_de_celula;1;
+ARQUIVO;ponte;arquivo;03_email_ponte_cambio_relatorio_set2026.eml;"anexo=PonteCambio_Relatorio_TARVO_092026.xlsx; aba=Operações"
+ARQUIVO;ponte;sha256;f0a86efce698e37811815335429565b85ae12c6536c2c939019d0e756710939d;
+ARQUIVO;ponte;data_email;2026-10-02;"cabeçalho Date do e-mail; o prazo de contestação da Ponte conta a partir dele"
+CONTAGEM;ponte;linhas_lidas;233;
+CONTAGEM;ponte;total_declarado_operacoes;233;
+CONTAGEM;ponte;total_declarado_spread_brl;78073.59;
+ARQUIVO;plano_contas;arquivo;04_plano_de_contas_fenix_erp.csv;encoding=cp1252
+ARQUIVO;plano_contas;sha256;fb99c63b151c2a029c86475eb2551e4af7722a055dc24137244a2411e7876d72;
+CONTAGEM;plano_contas;linhas_lidas;52;
+ARQUIVO;aurora;arquivo;05a_extrato_banco_aurora_cc4471_set2026.csv;encoding=utf-8
+ARQUIVO;aurora;sha256;02a9591f95a659ba7d9b26fb6e2521f9fbc1a5a8467f3cf5d2df2ca54ff382c7;
+CONTAGEM;aurora;linhas_lidas;84;
+CONTAGEM;aurora;saldo_anterior;612334.81;
+CONTAGEM;aurora;saldo_final_informado;-1920088.6;
+VERIFICACAO;aurora;saldo_final_recalculado_igual_ao_informado;OK;"calculado=-1920088.6; informado=-1920088.6"
+VERIFICACAO;aurora;saldo_linha_a_linha_confere;OK;linhas_com_diferenca=0
+ARQUIVO;meridiano;arquivo;05b_extrato_banco_meridiano_cc90233_set2026.ofx;encoding=cp1252
+ARQUIVO;meridiano;sha256;27f11fae20c1fb69e2ca47885f6082690fe5db5cd13ddf3e407ef3cb29e33283;
+CONTAGEM;meridiano;linhas_lidas;100;
+CONTAGEM;meridiano;saldo_final_informado;1320453.26;"o OFX não traz saldo inicial; não dá para recalcular"
+VERIFICACAO;meridiano;fitid_unico;OK;duplicados=0
+REGRA;parametros;spread_padrao_pct;1.5;célula em branco ou 'padrão' na tabela = 1,5% sobre a PTAX (Helena, financeiro)
+REGRA;parametros;tolerancia_spread_pp;0.005;"critério da equipe, escrito com motivo; o financeiro pediu não receber alarme de centavo"
+CONTAGEM;dim_ec;linhas_da_tabela_com_ec_confirmado_pelo_financeiro;3;
+REGRA;condicoes_comerciais;00520815000100 de 2026-09-01 a 2026-12-31;taxa_debito_pct=0.0, taxa_credito_vista_pct=0.0, taxa_credito_2_6x_pct=0.0, taxa_credito_7_12x_pct=0.0, taxa_pix_pct=0.0, taxa_antecipacao_pct=0.0;Casa do Estudante: tarifa zerada no checkout de setembro a dezembro (MDR e antecipacao) por acordo do comercial. Remessa segue normal. A Orbe nao foi avisada e cobrou, o cobrado e devolvido ao lojista | aprovado por Comercial (informado pela Helena do financeiro) em 2026-10-16
+VERIFICACAO;dim_ec;dim_ec_cobre_orbe_tabela_e_config;OK;"ECs no universo=23; na dim_ec=23"
+VERIFICACAO;dim_ec;ecs_respondidos_pelo_financeiro_com_status_esperado;OK;1043300981=CONFIRMADO, 1043396662=CONFIRMADO, 1038867654=CONFIRMADO, 1076801732=RETIDO
+CONTAGEM;dim_ec;ecs_so_na_tabela_ou_config_sem_venda_no_mes;1;1157874034 (Globo Trotter Viagens Ltda)
+VERIFICACAO;orbe;id_transacao_unico;OK;duplicados=0
+VERIFICACAO;orbe;valor_taxa_igual_bruto_x_taxa_truncado;OK;linhas_com_diferenca=0 (a Orbe trunca em centavos)
+VERIFICACAO;orbe;liquido_igual_bruto_menos_taxa;OK;linhas_com_diferenca=0
+CONTAGEM;orbe;estornos_sem_venda_original_no_arquivo;9;
+CONTAGEM;orbe;linhas_em_ec_nao_confirmado;57;
+CONTAGEM;ponte;operacoes_unicas;232;
+CONTAGEM;ponte;linhas_duplicadas;1;PC-0926-0162
+CONTAGEM;ponte;spreads_negativos;4;
+CONTAGEM;ponte;operacoes_com_ressalva;16;o status de compliance não muda nada para a Tarvo (financeiro)
+CONTAGEM;ponte;liquidadas_no_mes_seguinte;6;vale a data de contratação (financeiro)
+CONTAGEM;ponte;spreads_fora_da_tolerancia;27;tolerância 0.005 p.p. contra o spread contratado (padrão 1.5%)
+CONTAGEM;ponte;cnpj_fora_da_tabela;0;
+VERIFICACAO;ponte;linhas_lidas_igual_total_declarado;OK;"lidas=233; declarado=233"
+VERIFICACAO;ponte;soma_spread_igual_total_declarado;OK;"soma=78073.59; declarado=78073.59"
+REGRA;fato_banco;provisionado_antes;8;"folha, GPS, GRF, DARF e ISS do mês anterior e o repasse de comissão da Ponte já estavam registrados; o pagamento baixa a provisão (Helena, financeiro, canal #tarvo-financeiro)"
+VERIFICACAO;tabela_taxas;cnpj_com_14_digitos;ALERTA;ajustados=2 (zero à esquerda restaurado)
+CONTAGEM;dim_ec;ecs_nao_confirmados;1;1076801732=RETIDO
+VERIFICACAO;dim_ec;nenhum_ec_da_orbe_sem_mapeamento;OK;todos os ECs da Orbe estão CONFIRMADO ou RETIDO
+CONTAGEM;dim_ec;ecs_confirmados_pelo_financeiro;3;1038867654, 1043300981, 1043396662
+VERIFICACAO;fato_orbe;linhas_com_cnpj_ou_retidas;OK;toda linha da Orbe tem CNPJ, exceto as da EC retida (Atlas)
+VERIFICACAO;fato_banco;ref_origem_unico;OK;
+VERIFICACAO;orbe;linhas_lidas_igual_gravadas;OK;"lidas=1957; gravadas=1957"
+VERIFICACAO;ponte;linhas_lidas_igual_gravadas;OK;"lidas=233; gravadas=233"
+VERIFICACAO;plano_contas;linhas_lidas_igual_gravadas;OK;"lidas=52; gravadas=52"
+VERIFICACAO;bancos;linhas_lidas_igual_gravadas;OK;"lidas=184; gravadas=184"

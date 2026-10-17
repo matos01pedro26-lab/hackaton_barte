@@ -40,14 +40,24 @@ TRAVA = threading.Lock()      # os módulos usam stdout e pastas de trabalho: um
 
 
 def ler_multipart(content_type: str, corpo: bytes) -> tuple[dict[str, str], list[tuple[str, bytes]]]:
-    """Campos de texto e arquivos de um POST multipart/form-data (sem o módulo cgi, que saiu do Python 3.13)."""
-    msg = BytesParser(policy=HTTP).parsebytes(b"Content-Type: " + content_type.encode("latin-1") + b"\r\nMIME-Version: 1.0\r\n\r\n" + corpo)
+    """Campos de texto e arquivos de um POST multipart/form-data (sem o módulo cgi, que saiu do Python 3.13).
+    Cada parte é cortada pelos bytes do limite e guardada exatamente como chegou. O parser de e-mail só lê os cabeçalhos:
+    se lesse o corpo, um .eml (que o navegador manda como message/rfc822) viraria mensagem aninhada e chegaria vazio."""
+    limite = re.search(r'boundary="?([^";]+)"?', content_type or "")
     campos: dict[str, str] = {}
     arquivos: list[tuple[str, bytes]] = []
-    for parte in msg.iter_parts():
+    if not limite:
+        return campos, arquivos
+    for bloco in corpo.split(b"--" + limite.group(1).encode("latin-1"))[1:]:
+        if bloco.startswith(b"--"):            # limite final
+            break
+        cabecalho, separador, dados = bloco.removeprefix(b"\r\n").partition(b"\r\n\r\n")
+        if not separador:
+            continue
+        parte = BytesParser(policy=HTTP).parsebytes(cabecalho + b"\r\n\r\n", headersonly=True)
         nome_campo = parte.get_param("name", header="content-disposition")
         arquivo = parte.get_filename()
-        dados = parte.get_payload(decode=True) or b""
+        dados = dados.removesuffix(b"\r\n")
         if arquivo:
             arquivos.append((Path(arquivo.replace("\\", "/")).name, dados))     # só o nome, nunca o caminho
         elif nome_campo:

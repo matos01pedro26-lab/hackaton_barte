@@ -12,7 +12,7 @@ LINHA_NEGOCIO = "CHECKOUT"
 ZERO = Decimal("0")
 
 # Quem decide sobre um EC fora do faturamento, pelo status em dim_ec
-QUEM_DECIDE_EC = {"RETIDO": "Comercial", "PENDENTE": "Financeiro"}
+QUEM_DECIDE_EC = {"RETIDO": "Comercial (Diego)", "PENDENTE": "Comercial"}   # cadastro e contrato: comercial (T-800, 3 e 8)
 
 
 @dataclass
@@ -154,20 +154,20 @@ def calcular(entrada: Entrada) -> Resultado:
                   f"calculada pela planilha, e o valor é quanto ela mudaria a {x['taxa_referencia_pct']}% "
                   f"({x['fonte']}).", x["quem_decide"], linhas)
 
-    # Decisões do financeiro que só existem em config/ porque faltam na planilha de taxas (seção 3.1 do HIPOTESES)
+    # Decisões do financeiro que só existem em config/ porque faltam na planilha de taxas (seção 7.1 do HIPOTESES)
     for m in entrada.mapeamento:
         if m.get("pendencia_financeiro") and m["status"] == "CONFIRMADO":
             linhas = por_ec.get(m["ec"], [])
             pendencia("CADASTRO_EC", m["ec"], sum((v for _, v in linhas), ZERO),
                       f"{m['pendencia_financeiro']} Hoje o EC é ligado ao CNPJ {m['cnpj']} só por config/mapeamento_ec.csv "
-                      f"({m['fonte']}); valor = comissão que depende desse mapeamento.", "Financeiro", linhas)
+                      f"({m['fonte']}); valor = comissão que depende desse mapeamento.", "Comercial", linhas)
     for cond in entrada.condicoes:
         if cond.get("pendencia_financeiro"):
             linhas = por_condicao.get((cond["cnpj"], cond["faixa"]), [])
             pendencia("CADASTRO_CONDICAO", f"{cond['cnpj']}/{cond['faixa']}", sum((v for _, v in linhas), ZERO),
                       f"{cond['pendencia_financeiro']} Hoje a taxa de {cond['taxa_pct']}% vem só de "
                       f"config/condicoes_especiais.csv ({cond['fonte']}); valor = comissão que a planilha cobraria.",
-                      "Financeiro", linhas)
+                      "Comercial", linhas)
     # Ordem estável: a mesma entrada gera sempre os mesmos arquivos (R12)
     return Resultado(comissoes=comissoes,
                      rastro=sorted(rastro, key=lambda x: (x["id_saida"], x["ref_origem"])),

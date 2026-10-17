@@ -1,0 +1,66 @@
+{
+  "mes": "2026-09",
+  "fechado_em": "2026-10-17T16:30:35",
+  "commit": "7bb5d00",
+  "arquivos_de_entrada": [
+    {
+      "fonte": "orbe",
+      "arquivo": "01_orbe_relatorio_comissoes_set2026.csv",
+      "sha256": "fdbc2bad2dd38dde8bf3af9d5c1f21116f0eae8d71d6a5a16b0dfd82de3cc7ec"
+    },
+    {
+      "fonte": "orbe",
+      "arquivo": "06_orbe_ajustes_tardios_set2026.csv",
+      "sha256": "b1cfd183945fb194e05cfbe9455ab364c31b676427e6653562f6821f57240292"
+    },
+    {
+      "fonte": "tabela_taxas",
+      "arquivo": "02_tabela_taxas_contratadas.xlsx",
+      "sha256": "d0c7d2b13ac41c2a036a40362eb26c341666feef74d7199284742c255885dfc4"
+    },
+    {
+      "fonte": "ponte",
+      "arquivo": "03_email_ponte_cambio_relatorio_set2026.eml",
+      "sha256": "f0a86efce698e37811815335429565b85ae12c6536c2c939019d0e756710939d"
+    },
+    {
+      "fonte": "plano_contas",
+      "arquivo": "04_plano_de_contas_fenix_erp.csv",
+      "sha256": "fb99c63b151c2a029c86475eb2551e4af7722a055dc24137244a2411e7876d72"
+    },
+    {
+      "fonte": "aurora",
+      "arquivo": "05a_extrato_banco_aurora_cc4471_set2026.csv",
+      "sha256": "02a9591f95a659ba7d9b26fb6e2521f9fbc1a5a8467f3cf5d2df2ca54ff382c7"
+    },
+    {
+      "fonte": "meridiano",
+      "arquivo": "05b_extrato_banco_meridiano_cc90233_set2026.ofx",
+      "sha256": "27f11fae20c1fb69e2ca47885f6082690fe5db5cd13ddf3e407ef3cb29e33283"
+    }
+  ],
+  "totais": {
+    "comissao_total": "243278.79",
+    "comissao_checkout": "203735.34",
+    "comissao_remessa": "39543.45",
+    "lojistas": 23,
+    "divergencias_qtd": 119,
+    "divergencias": {
+      "CHECKOUT": {
+        "qtd": 92,
+        "valor": "1576.23"
+      },
+      "REMESSA": {
+        "qtd": 27,
+        "valor": "-2147.10"
+      }
+    },
+    "notas_qtd": 21,
+    "notas_valor": "243284.29",
+    "lancamentos_qtd": 184,
+    "pendencias_qtd": 23,
+    "rastro_linhas": 5214
+  },
+  "pendencias_abertas": 23,
+  "anteriores": []
+}

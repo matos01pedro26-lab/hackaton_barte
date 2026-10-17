@@ -86,7 +86,7 @@ class ComissaoPorLojista(unittest.TestCase):
         self.assertEqual(p["tipo"], "EC_RETIDO")
         self.assertEqual(p["ref_origem"], "TX2|TX3")  # as transações, como na remessa
         self.assertEqual(p["valor_brl"], Decimal("500.00"))
-        self.assertEqual(p["quem_decide"], "Comercial")
+        self.assertEqual(p["quem_decide"], "Comercial (Diego)")
         self.assertIn("nao faturar a Atlas", p["motivo"])
         self.assertEqual(soma_rastro(r, p["id_saida"]), p["valor_brl"])
         self.assertEqual({x["ref_origem"] for x in r.rastro if x["id_saida"] == p["id_saida"]}, {"TX2", "TX3"})
@@ -140,7 +140,7 @@ class ComissaoPorLojista(unittest.TestCase):
         self.assertEqual(cad["CADASTRO_CONDICAO"]["valor_brl"], Decimal("26.90"))  # o que a planilha cobraria
         self.assertIn("Registrar a taxa zerada", cad["CADASTRO_CONDICAO"]["motivo"])
         for p in cad.values():
-            self.assertEqual(p["quem_decide"], "Financeiro")
+            self.assertEqual(p["quem_decide"], "Comercial")
             self.assertEqual(soma_rastro(r, p["id_saida"]), p["valor_brl"])
 
     def test_condicao_ja_aplicada_pela_ingestao_mantem_o_valor_que_a_planilha_cobraria(self):

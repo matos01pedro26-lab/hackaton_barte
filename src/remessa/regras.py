@@ -5,6 +5,7 @@ Regras vindas do financeiro (canal #tarvo-financeiro):
   * operação repetida conta uma vez (o Nº de operação é único);
   * spread negativo não é aceito: fica fora da comissão e da nota;
   * linha "AJUSTE REF PC-..." entra no mês em que aparece e abate a participação;
+  * operação já faturada num mês fechado (histórico em fechamentos/) não entra de novo nem vira pendência;
   * status de compliance ("APROVADO C/ RESSALVA") não muda nada;
   * spread em branco ou "padrão" vale o spread padrão da configuração.
 """
@@ -25,6 +26,7 @@ class Classe(str, Enum):
     AJUSTE = "AJUSTE"
     SPREAD_NEGATIVO = "SPREAD_NEGATIVO"
     DUPLICATA = "DUPLICATA"
+    JA_FATURADA = "JA_FATURADA"
     FORA_COMPETENCIA = "FORA_COMPETENCIA"
 
 
@@ -40,7 +42,8 @@ def arredondar(valor: Decimal) -> Decimal:
     return valor.quantize(CENTAVO, rounding=ROUND_HALF_UP)
 
 
-def classificar(op: Operacao, mes: str, cfg: Config) -> OpClassificada:
+def classificar(op: Operacao, mes: str, cfg: Config, faturadas: frozenset[str] = frozenset()) -> OpClassificada:
+    """faturadas: Nº de operação que já entrou na nota de um mês fechado (src.historico.chaves_faturadas)."""
     if op.flag_duplicata:
         return OpClassificada(op, Classe.DUPLICATA)
     # O ajuste vem antes da checagem de mês: ele entra no fechamento do mês em que APARECE no relatório, mesmo que
@@ -48,6 +51,9 @@ def classificar(op: Operacao, mes: str, cfg: Config) -> OpClassificada:
     ajuste = cfg.padrao_ajuste.search(op.observacao)
     if ajuste:
         return OpClassificada(op, Classe.AJUSTE, op_original=ajuste.group(1))
+    # Operação contratada num mês e liquidada no seguinte pode reaparecer no relatório: já foi faturada, conta uma vez.
+    if op.num_op in faturadas:
+        return OpClassificada(op, Classe.JA_FATURADA)
     if not op.data_contratacao.startswith(mes):
         return OpClassificada(op, Classe.FORA_COMPETENCIA)
     if op.spread_brl < 0:
