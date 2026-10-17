@@ -3,8 +3,8 @@
 Uso (a partir da raiz do repositório, depois de python -m src.ingestao):
     python -m src.checkouts --mes 2026-09 --entrada data --config config --saida saida/checkouts
 
-Grava comissoes_por_lojista.csv, rastro.csv e pendencias.csv (só a parte do checkout; a consolidação com
-remessa e bancos é feita na integração).
+Grava comissoes_por_lojista.csv, divergencias_taxa.csv, rastro.csv e pendencias.csv, com exatamente as colunas do
+edital (só a parte do checkout; a consolidação com remessa e bancos é feita na integração).
 """
 from __future__ import annotations
 
@@ -31,8 +31,10 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     r = executar(a.mes, Path(a.entrada), Path(a.config), Path(a.saida))
     total = sum(c["comissao_brl"] for c in r.comissoes)
+    divergencia = sum(d["diferenca_brl"] for d in r.divergencias)
     print(f"Checkout {a.mes}: {len(r.comissoes)} lojistas, comissão total R$ {total}, "
-          f"{len(r.pendencias)} pendências. Arquivos em {Path(a.saida).resolve()}")
+          f"{len(r.divergencias)} divergências (R$ {divergencia}), {len(r.pendencias)} pendências. "
+          f"Arquivos em {Path(a.saida).resolve()}")
     return 0
 
 

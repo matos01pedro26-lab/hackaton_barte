@@ -5,7 +5,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from .regras import SemTaxa, comissao_linha, condicao_vigente, data_da_taxa, taxa_contratada, taxa_planilha
+from .regras import (SemTaxa, comissao_linha, condicao_vigente, data_da_taxa, divergencia_linha, taxa_contratada,
+                     taxa_planilha)
 
 LINHA_NEGOCIO = "CHECKOUT"
 ZERO = Decimal("0")
@@ -31,6 +32,7 @@ class Resultado:
     comissoes: list[dict]
     rastro: list[dict]
     pendencias: list[dict]
+    divergencias: list[dict] = field(default_factory=list)
 
 
 def id_comissao(competencia: str, cnpj: str) -> str:
@@ -49,7 +51,8 @@ def calcular(entrada: Entrada) -> Resultado:
     fora: dict[str, list[dict]] = defaultdict(list)          # EC não confirmado -> transações
     por_ec: dict[str, list[tuple]] = defaultdict(list)       # EC -> (transação, comissão)
     por_condicao: dict[tuple, list[tuple]] = defaultdict(list)  # condição -> (transação, comissão dispensada)
-    rastro, pendencias = [], []
+    cobrado_a_mais: dict[str, list[tuple]] = defaultdict(list)  # CNPJ -> (transação, diferença)
+    rastro, pendencias, divergencias = [], [], []
 
     def pendencia(tipo, ref, valor, motivo, quem, linhas):
         id_saida = id_pendencia(comp, tipo, ref)
@@ -64,13 +67,21 @@ def calcular(entrada: Entrada) -> Resultado:
             continue
         dia = data_da_taxa(t)
         try:
-            valor = comissao_linha(bruto, taxa_contratada(t["cnpj"], t["faixa"], dia, entrada.contratos,
-                                                          entrada.condicoes))
+            taxa = taxa_contratada(t["cnpj"], t["faixa"], dia, entrada.contratos, entrada.condicoes)
             cond = condicao_vigente(t["cnpj"], t["faixa"], dia, entrada.condicoes)
         except SemTaxa as e:
             pendencia("SEM_TAXA_CONTRATADA", t["id_transacao"], bruto,
                       f"{e}. Transação fora da comissão; valor = bruto.", "Financeiro", [(t, bruto)])
             continue
+        valor = comissao_linha(bruto, taxa)
+        aplicada = Decimal(t["taxa_aplicada_pct"])
+        if aplicada != taxa:
+            diferenca = divergencia_linha(bruto, aplicada, taxa)
+            divergencias.append({"id_saida": t["id_transacao"], "cnpj": t["cnpj"], "linha_negocio": LINHA_NEGOCIO,
+                                 "ref_origem": t["id_transacao"], "taxa_contratada_pct": taxa,
+                                 "taxa_aplicada_pct": aplicada, "diferenca_brl": diferenca})
+            rastro.append(_rastro(t["id_transacao"], t, diferenca))
+            cobrado_a_mais[t["cnpj"]].append((t, diferenca))
         total[t["cnpj"]] += valor
         rastro.append(_rastro(id_comissao(comp, t["cnpj"]), t, valor))
         por_ec[t["ec"]].append((t, valor))
@@ -100,6 +111,15 @@ def calcular(entrada: Entrada) -> Resultado:
                   f"Comissão de checkout de {c['lojista']} no mês é {c['comissao_brl']}: não emite nota, "
                   "e o saldo não é levado para o mês seguinte automaticamente.", "Financeiro", linhas)
 
+    # Divergência é devolução: a Orbe liquidou a menos ao lojista e a Tarvo devolve a diferença (Helena, R5, R8, R9)
+    for cnpj, linhas in sorted(cobrado_a_mais.items()):
+        valor = sum((v for _, v in linhas), ZERO)
+        if valor:
+            pendencia("DEVOLUCAO_DIVERGENCIA", cnpj, valor,
+                      f"A Orbe cobrou de {nomes.get(cnpj, cnpj)} {valor} acima do contrato em {len(linhas)} transações "
+                      "(ver divergencias_taxa). Devolver ao lojista e corrigir a taxa cadastrada na Orbe.",
+                      "Financeiro", linhas)
+
     # Decisões do financeiro que só existem em config/ porque faltam na planilha de taxas (seção 3.1 do HIPOTESES)
     for m in entrada.mapeamento:
         if m.get("pendencia_financeiro") and m["status"] == "CONFIRMADO":
@@ -117,7 +137,8 @@ def calcular(entrada: Entrada) -> Resultado:
     # Ordem estável: a mesma entrada gera sempre os mesmos arquivos (R12)
     return Resultado(comissoes=comissoes,
                      rastro=sorted(rastro, key=lambda x: (x["id_saida"], x["ref_origem"])),
-                     pendencias=sorted(pendencias, key=lambda x: x["id_saida"]))
+                     pendencias=sorted(pendencias, key=lambda x: x["id_saida"]),
+                     divergencias=sorted(divergencias, key=lambda x: x["id_saida"]))
 
 
 def _rastro(id_saida: str, t: dict, valor: Decimal) -> dict:

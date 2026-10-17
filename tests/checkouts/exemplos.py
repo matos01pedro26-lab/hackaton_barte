@@ -5,13 +5,19 @@ CNPJ_A = "11111111000111"
 CNPJ_B = "22222222000122"
 
 
+# Taxa que a Orbe aplica por padrão em cada faixa: a mesma de contrato() sem argumentos, para não gerar divergência
+APLICADA_PADRAO = {"debito": "1.49", "credito_a_vista": "2.69", "credito_2_6x": "3.19", "credito_7_12x": "3.79",
+                   "pix": "0.89", "antecipacao": "2.1"}
+
+
 def transacao(id_transacao, cnpj=CNPJ_A, faixa="credito_a_vista", bruto="100.00", data="2026-09-10",
-              tipo="VENDA", ec="1000000001", status_ec="CONFIRMADO", data_venda_original=""):
+              tipo="VENDA", ec="1000000001", status_ec="CONFIRMADO", data_venda_original="", aplicada=None):
+    aplicada = aplicada or APLICADA_PADRAO[faixa]
     return {
         "arquivo_origem": "01_orbe_relatorio_comissoes_set2026.csv", "id_transacao": id_transacao,
         "data_movimento": data, "ec": ec, "status_ec": status_ec, "cnpj": cnpj if status_ec == "CONFIRMADO" else "",
         "nome_estabelecimento": "LOJA", "tipo_lancamento": tipo, "faixa": faixa, "valor_bruto": bruto,
-        "data_venda_original": data_venda_original,
+        "data_venda_original": data_venda_original, "taxa_aplicada_pct": aplicada,
     }
 
 

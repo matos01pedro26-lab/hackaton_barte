@@ -11,6 +11,8 @@ from .regras import CENTAVO
 COL_COMISSOES = ["id_saida", "cnpj", "lojista", "linha_negocio", "comissao_brl"]
 COL_RASTRO = ["id_saida", "arquivo_origem", "ref_origem", "valor"]
 COL_PENDENCIAS = ["id_saida", "tipo", "ref_origem", "valor_brl", "motivo", "quem_decide"]
+COL_DIVERGENCIAS = ["id_saida", "cnpj", "linha_negocio", "ref_origem", "taxa_contratada_pct", "taxa_aplicada_pct",
+                    "diferenca_brl"]
 
 
 def _centavos(linhas: list[dict], campo: str) -> list[dict]:
@@ -25,4 +27,6 @@ def gravar(resultado: Resultado, saida: Path) -> dict[str, int]:
         "rastro": escrever_csv(saida / "rastro.csv", _centavos(resultado.rastro, "valor"), COL_RASTRO),
         "pendencias": escrever_csv(saida / "pendencias.csv", _centavos(resultado.pendencias, "valor_brl"),
                                    COL_PENDENCIAS),
+        "divergencias_taxa": escrever_csv(saida / "divergencias_taxa.csv",
+                                          _centavos(resultado.divergencias, "diferenca_brl"), COL_DIVERGENCIAS),
     }

@@ -22,6 +22,12 @@ def comissao_linha(valor_bruto: Decimal, taxa_pct: Decimal) -> Decimal:
     return arredondar(valor_bruto * taxa_pct / Decimal(100))
 
 
+def divergencia_linha(valor_bruto: Decimal, aplicada_pct: Decimal, contratada_pct: Decimal) -> Decimal:
+    """R5: bruto × (aplicada − contratada), arredondado por linha (R4). Positiva = Orbe cobrou a mais; no estorno o
+    bruto é negativo e o sinal se inverte. Compara o percentual, então o centavo do truncamento da Orbe não aparece."""
+    return arredondar(valor_bruto * (aplicada_pct - contratada_pct) / Decimal(100))
+
+
 def data_da_taxa(transacao: dict) -> str:
     """Venda e antecipação: data do movimento (vigência da Bridge, Helena). Estorno e reversão: data da venda
     ou antecipação original (R2), que a Orbe informa em data_venda_original."""

@@ -32,7 +32,7 @@ class ComissaoPorLojista(unittest.TestCase):
         r = calcular(entrada([transacao("TX1", bruto="1000.00", data="2026-09-14"),
                               transacao("TX2", bruto="1000.00", data="2026-09-15")], contratos=contratos))
 
-        por_ref = {x["ref_origem"]: x["valor"] for x in r.rastro}
+        por_ref = {x["ref_origem"]: x["valor"] for x in r.rastro if x["id_saida"].startswith("CHK-")}
         self.assertEqual(por_ref, {"TX1": Decimal("25.90"), "TX2": Decimal("21.90")})
         self.assertEqual(len(r.comissoes), 1)
         self.assertEqual(r.comissoes[0]["comissao_brl"], Decimal("47.80"))
@@ -44,7 +44,7 @@ class ComissaoPorLojista(unittest.TestCase):
                               transacao("TX2", faixa="debito", tipo="ESTORNO", bruto="-100.00", data="2026-09-05",
                                         data_venda_original="2026-08-20")], contratos=contratos))
 
-        por_ref = {x["ref_origem"]: x["valor"] for x in r.rastro}
+        por_ref = {x["ref_origem"]: x["valor"] for x in r.rastro if x["id_saida"].startswith("CHK-")}
         self.assertEqual(por_ref, {"TX1": Decimal("14.90"), "TX2": Decimal("-1.99")})
         self.assertEqual(r.comissoes[0]["comissao_brl"], Decimal("12.91"))
 
@@ -55,7 +55,7 @@ class ComissaoPorLojista(unittest.TestCase):
                               transacao("TX3", faixa="pix", tipo="ESTORNO", bruto="-0.50",
                                         data_venda_original="2026-09-01")], contratos=contratos))
 
-        por_ref = {x["ref_origem"]: x["valor"] for x in r.rastro}
+        por_ref = {x["ref_origem"]: x["valor"] for x in r.rastro if x["id_saida"].startswith("CHK-")}
         self.assertEqual(por_ref, {"TX1": Decimal("0.01"), "TX2": Decimal("0.01"), "TX3": Decimal("-0.01")})
         self.assertEqual(r.comissoes[0]["comissao_brl"], Decimal("0.01"))
 
@@ -114,9 +114,9 @@ class ComissaoPorLojista(unittest.TestCase):
                                         data_venda_original="2026-08-21")], condicoes=[condicao(pendencia="")]))
 
         self.assertEqual(r.comissoes[0]["comissao_brl"], Decimal("-5.50"))
-        self.assertEqual(len(r.pendencias), 1)
-        p = r.pendencias[0]
-        self.assertEqual(p["tipo"], "COMISSAO_NAO_POSITIVA")
+        nao_positivas = [p for p in r.pendencias if p["tipo"] == "COMISSAO_NAO_POSITIVA"]
+        self.assertEqual(len(nao_positivas), 1)
+        p = nao_positivas[0]
         self.assertEqual(p["ref_origem"], f"CHK-2026-09-{CNPJ_A}")
         self.assertEqual(p["valor_brl"], Decimal("-5.50"))
         self.assertEqual(p["quem_decide"], "Financeiro")
@@ -166,7 +166,8 @@ class ComissaoPorLojista(unittest.TestCase):
         a = calcular(entrada(linhas, contratos=contratos))
         b = calcular(entrada(list(reversed(linhas)), contratos=list(reversed(contratos))))
 
-        self.assertEqual((a.comissoes, a.rastro, a.pendencias), (b.comissoes, b.rastro, b.pendencias))
+        self.assertEqual((a.comissoes, a.rastro, a.pendencias, a.divergencias),
+                         (b.comissoes, b.rastro, b.pendencias, b.divergencias))
         self.assertEqual([c["cnpj"] for c in a.comissoes], sorted(c["cnpj"] for c in a.comissoes))
 
 
