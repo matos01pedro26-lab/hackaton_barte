@@ -24,7 +24,7 @@ def executar(mes: str, entrada: Path, config: Path, saida: Path) -> Resultado:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Comissão de checkout por lojista, com rastro e pendências.")
-    ap.add_argument("--mes", default="2026-09", help="competência AAAA-MM")
+    ap.add_argument("--mes", required=True, help="competência AAAA-MM")
     ap.add_argument("--entrada", default="data", help="pasta com as tabelas geradas por src.ingestao")
     ap.add_argument("--config", default="config", help="pasta com mapeamento_ec.csv e condicoes_especiais.csv")
     ap.add_argument("--saida", default="saida/checkouts", help="pasta onde os CSVs serão gravados")

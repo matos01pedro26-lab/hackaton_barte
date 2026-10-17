@@ -15,3 +15,6 @@ venv/
 *.pem
 *.key
 credentials*
+
+# Execucoes da tela (src.app): uploads e resultados de cada rodada
+execucoes/

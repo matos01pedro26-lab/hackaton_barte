@@ -287,6 +287,11 @@ def ler_ponte(caminho: Path, ctl: Controle) -> tuple[list[dict], str]:
             totais["spread"] = num_ponto(cel.get((r, "B"), ""))
     ctl.add("ARQUIVO", "ponte", "arquivo", caminho.name, f"anexo={nome_anexo}; aba={nome_aba}")
     ctl.add("ARQUIVO", "ponte", "sha256", sha256(caminho))
+    try:
+        ctl.add("ARQUIVO", "ponte", "data_email", email.utils.parsedate_to_datetime(msg["Date"]).date().isoformat(),
+                "cabeçalho Date do e-mail; o prazo de contestação da Ponte conta a partir dele")
+    except (TypeError, ValueError):
+        pass          # e-mail sem Date legível: o prazo fica sem data
     ctl.add("CONTAGEM", "ponte", "linhas_lidas", len(ops))
     if "ops" in totais:
         ctl.add("CONTAGEM", "ponte", "total_declarado_operacoes", totais["ops"])
@@ -873,7 +878,7 @@ def executar(mes: str, entrada: Path, saida: Path) -> dict[str, int]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Ingestão do data pack da Tarvo em tabelas padronizadas (CSV).")
-    ap.add_argument("--mes", default="2026-09", help="competência AAAA-MM (usada também para achar os arquivos do mês)")
+    ap.add_argument("--mes", required=True, help="competência AAAA-MM (usada também para achar os arquivos do mês)")
     ap.add_argument("--entrada", default="input", help="pasta com os arquivos brutos (todos os de entrada ficam aqui)")
     ap.add_argument("--saida", default="data", help="pasta onde as tabelas serão gravadas")
     a = ap.parse_args(argv)

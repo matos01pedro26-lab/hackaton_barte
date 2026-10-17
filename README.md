@@ -2,7 +2,32 @@
 
 Pipeline que lê o data pack (Orbe, Ponte, extratos Aurora e Meridiano, planilha de taxas, plano de contas) e gera os seis arquivos do edital em `saida/`.
 
-## Como rodar (Python 3.11+, só biblioteca padrão; nenhuma chave de API é necessária)
+## Como rodar
+
+Python 3.11 ou mais novo. **Não há nada para instalar** (só a biblioteca padrão) e **não há chave de API para configurar**: nenhuma etapa chama IA em execução. A classificação dos extratos é 100% por regra, e as regras vêm do financeiro (`config/` e `HIPOTESES.md`).
+
+```
+git clone https://github.com/matos01pedro26-lab/hackaton_barte
+cd hackaton_barte
+```
+
+### Opção 1: um comando
+
+```
+python -m src.fechar --mes 2026-09
+```
+
+Lê os arquivos do mês em `input/`, roda ingestão, checkout, remessa, consolidação e validador, grava os seis arquivos em `saida/` e imprime o resumo (comissão, notas, divergências, pendências). O mês é sempre informado, e nada no código está fixo em setembro. Para outro mês, ponha os arquivos novos (mesmo formato) numa pasta e aponte para ela: `python -m src.fechar --mes 2026-10 --entrada <pasta>`.
+
+### Opção 2: tela
+
+```
+python -m src.app
+```
+
+Abre uma página no navegador (`http://127.0.0.1:8765`). Ela roda **no computador de quem executa**: `127.0.0.1` significa "esta máquina", e o servidor é o próprio comando acima, sem internet nem instalação. Na página: arraste os arquivos do mês (ou use os do case), clique em **Fechar o mês**, veja o dashboard (comissão por lojista, divergências, pendências, notas e extratos), clique em qualquer número para ver as linhas de origem e baixe os seis CSVs (ou o zip). Cada rodada fica em `execucoes/` e não altera o `saida/` entregue.
+
+### Etapa a etapa (o que `src.fechar` faz por baixo)
 
 ```
 python -m src.ingestao  --mes 2026-09 --entrada input --saida data
