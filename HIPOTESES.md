@@ -312,3 +312,15 @@ Em 17/10 a Helena informou que as perguntas já têm resposta escrita nas rodada
 | Duplicata PC-0926-0162 (R$ 410,94) | PREMISSA | entra na contestação pela parte da Tarvo |
 | Casa do Estudante a partir de 2027 | PREMISSA: taxa volta à planilha; renovação é do comercial | sem pendência própria |
 | Prazo da contestação à Ponte | PREMISSA da Helena, com risco: 5 dias úteis do e-mail dão 09/10, já vencido | contestação segue dependendo de data confirmada pela Ponte |
+
+## 7. Premissas assumidas para fechar a entrega (18/10)
+
+Sem resposta adicional, o time assume:
+
+| Item | Premissa | Consequência |
+|---|---|---|
+| Duplicata PC-0926-0162 | Entra na contestação à Ponte pela parte da Tarvo (R$ 410,94) | "A contestar" passa a R$ 6.972,03 e a Ponte a R$ 5.395,80 |
+| Pitch | Os números corrigidos valem para o roteiro: 5.243 linhas de rastro, 24 pendências e o valor a contestar acima | o PDF só é reexportado se alguém com a fonte fizer; até lá o roteiro é a referência |
+| Complemento da Orbe sem marca do mês no nome | Não é lido, e fica como limitação conhecida (sem alerta automático) | o time confere o nome dos arquivos antes de rodar |
+| Prazo da Ponte | Segue como premissa da Helena, com risco registrado | contestação sai só com data confirmada pela Ponte |
+

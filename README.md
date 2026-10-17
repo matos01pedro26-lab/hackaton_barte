@@ -100,6 +100,7 @@ Regra primeiro (`src/classificacao.py`, `REGRAS`); IA só onde não há regra, c
 - **Texto fiscal da nota:** o tomador das notas de checkout é o nome da planilha de taxas com o CNPJ. A razão social oficial não está no pacote; a emissão depende de a Helena confirmar (pendência `RAZAO_SOCIAL_NOTAS`).
 - **Prazo de contestação da Ponte:** o e-mail de 02/10 dá 5 dias úteis, o que leva a 2026-10-09 (sem feriados). Em 17/10 esse prazo já passou. A contestação só deve ser enviada com a data confirmada por escrito.
 - **Meridiano sem saldo inicial:** a soma do extrato do Meridiano não é conferida contra o saldo; só a do Aurora é.
+- **Complemento da Orbe sem a marca do mês no nome** (ex.: `06_orbe_ajustes_tardios_set2026.csv` num fechamento de outubro): o arquivo é ignorado sem aviso. Conferir o nome antes de rodar.
 - **Condição da Casa em dois arquivos de `config/`** (`condicoes_comerciais.csv` e `condicoes_especiais.csv`), a unificar.
 - Premissas marcadas na coluna `premissa` dos lançamentos: Google Workspace (L48) em 4.2.04 e devolução de PIX (L65) em 2.1.01.001.
 - Não há nota para lojista com comissão zero ou negativa (Casa e Atlas): vira pendência.
