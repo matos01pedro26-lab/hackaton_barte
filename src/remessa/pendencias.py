@@ -9,6 +9,7 @@ from decimal import Decimal
 from .comissao import ELEGIVEIS
 from .config import Config
 from .divergencia import Diferenca
+from .ids import id_nota, id_pendencia
 from .regras import Classe, OpClassificada
 
 
@@ -33,19 +34,19 @@ def montar_pendencias(classificadas: list[OpClassificada], diferencas: list[Dife
     for c in classificadas:
         op = c.op
         if c.classe is Classe.DUPLICATA:
-            id_saida = f"{op.num_op}|DUPLICATA"
+            id_saida = id_pendencia(mes, "DUPLICATA", op.num_op)
             pend.append(_pendencia(id_saida, "DUPLICATA", [op.num_op], op.spread_brl,
                                    "Mesmo Nº de operação repetido no relatório da Ponte. Conta uma vez no fechamento; "
                                    "a repetida entra na lista para a Ponte corrigir o relatório.", ponte))
             rastro.append(_rastro(id_saida, c, op.spread_brl))
         elif c.classe is Classe.SPREAD_NEGATIVO:
-            id_saida = f"{op.num_op}|SPREAD_NEGATIVO"
+            id_saida = id_pendencia(mes, "SPREAD_NEGATIVO", op.num_op)
             pend.append(_pendencia(id_saida, "SPREAD_NEGATIVO", [op.num_op], op.spread_brl,
                                    "Spread negativo no relatório (valor que aconteceu). Fora da comissão e da nota; "
                                    "a trava passou do prazo de 2 horas. Contestar com a Ponte.", ponte))
             rastro.append(_rastro(id_saida, c, op.spread_brl))
         elif c.classe is Classe.FORA_COMPETENCIA:
-            id_saida = f"{op.num_op}|FORA_COMPETENCIA"
+            id_saida = id_pendencia(mes, "FORA_COMPETENCIA", op.num_op)
             pend.append(_pendencia(id_saida, "FORA_COMPETENCIA", [op.num_op], op.spread_brl,
                                    f"Data de contratação ({op.data_contratacao}) fora do mês {mes}. "
                                    "Não entra na comissão do mês.", ponte))
@@ -54,7 +55,7 @@ def montar_pendencias(classificadas: list[OpClassificada], diferencas: list[Dife
     for d in diferencas:
         if d.classificada.classe is Classe.SPREAD_NEGATIVO:
             op = d.classificada.op
-            id_saida = f"{op.num_op}|CONTESTACAO_ATE_CONTRATO"
+            id_saida = id_pendencia(mes, "CONTESTACAO_ATE_CONTRATO", op.num_op)
             pend.append(_pendencia(id_saida, "CONTESTACAO_ATE_CONTRATO", [op.num_op], d.diferenca_brl,
                                    f"Diferença até o spread do contrato ({d.contratado_pct}% sobre a PTAX): "
                                    "o que se pede à Ponte, porque a trava deveria ter sido honrada.", ponte))
@@ -65,7 +66,7 @@ def montar_pendencias(classificadas: list[OpClassificada], diferencas: list[Dife
         if d.classificada.classe is Classe.NORMAL:
             por_lojista.setdefault(d.classificada.op.cnpj, []).append(d)
     for cnpj, itens in sorted(por_lojista.items()):
-        id_saida = f"{cnpj}|CONTESTACAO_PONTE"
+        id_saida = id_pendencia(mes, "CONTESTACAO_PONTE", cnpj)
         total = sum((d.diferenca_brl for d in itens), Decimal("0.00"))
         pend.append(_pendencia(id_saida, "CONTESTACAO_PONTE", [d.classificada.op.num_op for d in itens], total,
                                "Spread aplicado pela Ponte diferente do contratado. Valor cheio pago a mais pelo "
@@ -79,7 +80,7 @@ def montar_pendencias(classificadas: list[OpClassificada], diferencas: list[Dife
         elegiveis = [c for c in itens if c.classe in ELEGIVEIS]
         if not elegiveis:
             continue
-        id_saida = f"{cnpj}|CADASTRO_AUSENTE"
+        id_saida = id_pendencia(mes, "CADASTRO_AUSENTE", cnpj)
         valor = sum((comissao_por_op[c.op.num_op] for c in elegiveis), Decimal("0.00"))
         pend.append(_pendencia(id_saida, "CADASTRO_AUSENTE", [c.op.num_op for c in elegiveis], valor,
                                "CNPJ com remessa na Ponte e sem linha vigente na tabela de taxas. A participação foi "
@@ -88,8 +89,8 @@ def montar_pendencias(classificadas: list[OpClassificada], diferencas: list[Dife
         rastro.extend(_rastro(id_saida, c, comissao_por_op[c.op.num_op]) for c in elegiveis)
 
     if total_participacao <= 0:
-        id_saida = f"PONTE|{mes}|NOTA_NAO_EMITIDA"
-        pend.append(_pendencia(id_saida, "NOTA_NAO_EMITIDA", [f"PONTE|{mes}"], total_participacao,
+        id_saida = id_pendencia(mes, "NOTA_NAO_EMITIDA", cfg.tomador_cnpj)
+        pend.append(_pendencia(id_saida, "NOTA_NAO_EMITIDA", [id_nota(mes, cfg.tomador_cnpj)], total_participacao,
                                "Participação do mês zerada ou negativa: não emite nota e o saldo não passa para o mês seguinte.",
                                cfg.quem_decide["nota"]))
     return pend, rastro

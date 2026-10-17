@@ -8,6 +8,8 @@ from decimal import Decimal
 from pathlib import Path
 
 from src.remessa.comissao import calcular_comissoes
+from src.remessa.ids import id_comissao, id_divergencia, id_nota, id_pendencia
+from src.remessa.nota import montar_nota
 from src.remessa.config import carregar_config
 from src.remessa.divergencia import calcular_diferencas, divergencias
 from src.remessa.leitura import Contrato, Operacao
@@ -66,7 +68,7 @@ class Comissao(unittest.TestCase):
     def test_metade_do_spread_arredondada_por_operacao(self):
         cls = [classificar(op(num="A", spread="262.01"), "2026-09", CFG),
                classificar(op(num="B", spread="262.01"), "2026-09", CFG)]
-        linhas, _, por_op = calcular_comissoes(cls, {}, CFG)
+        linhas, _, por_op = calcular_comissoes(cls, {}, CFG, "2026-09")
         self.assertEqual(por_op["A"], D("131.01"))
         self.assertEqual(linhas[0]["comissao_brl"], D("262.02"))
 
@@ -75,7 +77,7 @@ class Comissao(unittest.TestCase):
                classificar(op(num="N", spread="-40"), "2026-09", CFG),
                classificar(op(num="D", spread="100", dup=True), "2026-09", CFG),
                classificar(op(num="J", spread="-20", obs="AJUSTE REF PC-0826-0001"), "2026-09", CFG)]
-        linhas, rastro, _ = calcular_comissoes(cls, {}, CFG)
+        linhas, rastro, _ = calcular_comissoes(cls, {}, CFG, "2026-09")
         self.assertEqual(linhas[0]["comissao_brl"], D("40.00"))
         self.assertEqual({r["ref_origem"] for r in rastro}, {"A", "J"})
         self.assertEqual([r["ref_original"] for r in rastro if r["ref_origem"] == "J"], ["PC-0826-0001"])
@@ -103,7 +105,7 @@ class Divergencia(unittest.TestCase):
         por_cnpj = indexar_contratos([contrato(pct="1.5")])
         cfg = replace(CFG, tolerancia_brl=D("0"), tolerancia_pp=D("0"))
         dif, _ = calcular_diferencas([classificar(op(spread="75.01"), "2026-09", cfg)], por_cnpj, cfg)
-        linhas, _ = divergencias(dif, cfg)
+        linhas, _ = divergencias(dif, cfg, "2026-09")
         self.assertEqual(len(linhas), 1)
 
     def test_tolerancia_em_pp_ignora_ruido_e_mantem_divergencia_real(self):
@@ -113,14 +115,14 @@ class Divergencia(unittest.TestCase):
         micro = classificar(op(num="M", spread="75.20"), "2026-09", CFG)   # +0,004 p.p. -> dentro do ruido
         real = classificar(op(num="V", spread="150"), "2026-09", CFG)      # +1,5 p.p.
         dif, _ = calcular_diferencas([ruido, micro, real], por_cnpj, cfg)
-        linhas, _ = divergencias(dif, cfg)
+        linhas, _ = divergencias(dif, cfg, "2026-09")
         self.assertEqual({l["ref_origem"] for l in linhas}, {"R", "V"})
 
     def test_tolerancia_vale_so_quando_ultrapassa_as_duas(self):
         por_cnpj = indexar_contratos([contrato(pct="1.5")])
         cfg = replace(CFG, tolerancia_brl=D("100"))   # diferença de 75 fica dentro da tolerância em reais
         dif, _ = calcular_diferencas([classificar(op(spread="150"), "2026-09", CFG)], por_cnpj, cfg)
-        self.assertEqual(divergencias(dif, cfg)[0], [])
+        self.assertEqual(divergencias(dif, cfg, "2026-09")[0], [])
 
     def test_sem_contrato_vigente_vai_para_cadastro(self):
         dif, sem = calcular_diferencas([classificar(op(), "2026-09", CFG)], {}, CFG)
@@ -141,6 +143,60 @@ class Rastro(unittest.TestCase):
     def test_rastro_que_fecha_passa(self):
         validar_rastro({"x": ([{"id_saida": "A", "v": D("10.00")}], "v")},
                        [{"id_saida": "A", "valor": D("4.00")}, {"id_saida": "A", "valor": D("6.00")}])
+
+
+class Ids(unittest.TestCase):
+    def test_formato_igual_ao_do_checkout(self):
+        self.assertEqual(id_comissao("2026-09", "34671260000100"), "REM-2026-09-34671260000100")
+        self.assertEqual(id_divergencia("2026-09", "PC-0926-0011"), "DIV-REM-2026-09-PC-0926-0011")
+        self.assertEqual(id_pendencia("2026-09", "DUPLICATA", "PC-0926-0162"), "PEN-REM-2026-09-DUPLICATA-PC-0926-0162")
+        self.assertEqual(id_nota("2026-09", "75374179000146"), "NF-REM-2026-09-75374179000146")
+
+
+class Nota(unittest.TestCase):
+    def test_uma_nota_com_o_total_e_rastro_por_operacao(self):
+        cls = [classificar(op(num="A", spread="100"), "2026-09", CFG), classificar(op(num="B", spread="50"), "2026-09", CFG)]
+        linhas, rastro_com, _ = calcular_comissoes(cls, {}, CFG, "2026-09")
+        notas, rastro = montar_nota(D("75.00"), rastro_com, "2026-09", CFG)
+        self.assertEqual(len(notas), 1)
+        self.assertEqual((notas[0]["tomador_cnpj"], notas[0]["valor_brl"]), ("75374179000146", D("75.00")))
+        self.assertIn("09/2026", notas[0]["discriminacao"])
+        self.assertEqual(sum(r["valor"] for r in rastro), D("75.00"))
+        self.assertEqual({r["id_saida"] for r in rastro}, {notas[0]["id_saida"]})
+
+    def test_zero_ou_negativo_nao_emite(self):
+        self.assertEqual(montar_nota(D("0.00"), [], "2026-09", CFG), ([], []))
+        self.assertEqual(montar_nota(D("-10.00"), [], "2026-09", CFG), ([], []))
+
+
+class AjusteNoFechamento(unittest.TestCase):
+    """Setembro não tem ajuste da Ponte. Acrescenta uma linha sintética AJUSTE REF ao fato_ponte e roda o pipeline inteiro."""
+
+    def test_ajuste_abate_a_participacao_e_o_rastro_aponta_para_a_original(self):
+        import csv
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            dados = Path(tmp) / "data"
+            shutil.copytree(RAIZ / "data", dados)
+            with (dados / "fato_ponte.csv").open(encoding="utf-8", newline="") as f:
+                leitor = csv.DictReader(f, delimiter=";")
+                colunas, linhas = leitor.fieldnames, list(leitor)
+            ajuste = dict(linhas[0], num_op="PC-0926-9999", spread_brl="-100.00", spread_pct="-0.5", flag_spread_negativo="S",
+                          observacao="AJUSTE REF PC-0826-0042", linha_origem="999")
+            with (dados / "fato_ponte.csv").open("w", encoding="utf-8", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=colunas, delimiter=";", lineterminator="\n")
+                w.writeheader(); w.writerows(linhas + [ajuste])
+            saida = Path(tmp) / "saida"
+            executar("2026-09", dados, saida, RAIZ / "config" / "remessa.json")
+            resumo = {l.split(";")[0]: l.strip().split(";")[1]
+                      for l in (saida / "remessa_resumo.csv").read_text(encoding="utf-8").splitlines()[1:]}
+            rastro = list(csv.DictReader((saida / "remessa_rastro.csv").read_text(encoding="utf-8").splitlines(), delimiter=";"))
+            notas = list(csv.DictReader((saida / "remessa_notas.csv").read_text(encoding="utf-8").splitlines(), delimiter=";"))
+        self.assertEqual(resumo["operacoes_ajuste"], "1")
+        self.assertEqual(resumo["total_participacao_brl"], "39493.45")        # 39543,45 - 50
+        self.assertEqual(notas[0]["valor_brl"], "39493.45")
+        linha = next(r for r in rastro if r["ref_origem"] == "PC-0926-9999" and r["id_saida"].startswith("REM-"))
+        self.assertEqual((linha["valor"], linha["ref_original"]), ("-50.00", "PC-0826-0042"))
 
 
 class PontaAPonta(unittest.TestCase):

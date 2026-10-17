@@ -23,6 +23,8 @@ class Config:
     tolerancia_brl: Decimal
     tolerancia_pp: Decimal
     padrao_ajuste: re.Pattern
+    tomador_cnpj: str
+    tomador_nome: str
     quem_decide: dict[str, str]
 
 
@@ -41,5 +43,7 @@ def carregar_config(caminho: Path, parametros: Path | None = None) -> Config:
         tolerancia_brl=Decimal(bruto["tolerancia_brl"]),
         tolerancia_pp=Decimal(comuns["tolerancia_spread_pp"]),
         padrao_ajuste=re.compile(bruto["padrao_ajuste"], re.IGNORECASE),
+        tomador_cnpj=bruto["tomador"]["cnpj"],
+        tomador_nome=bruto["tomador"]["nome"],
         quem_decide=dict(bruto["quem_decide"]),
     )

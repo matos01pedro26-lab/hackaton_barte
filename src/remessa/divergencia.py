@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from .config import Config
+from .ids import id_divergencia
 from .leitura import Contrato
 from .regras import Classe, OpClassificada, arredondar, contrato_vigente, spread_contratado
 
@@ -53,20 +54,21 @@ def calcular_diferencas(classificadas: list[OpClassificada], por_cnpj: dict[str,
     return diferencas, sem_contrato
 
 
-def divergencias(diferencas: list[Diferenca], cfg: Config) -> tuple[list[dict], list[dict]]:
-    """Linhas de divergencias_taxa (parcial) e rastro. id_saida = Nº da operação."""
+def divergencias(diferencas: list[Diferenca], cfg: Config, mes: str) -> tuple[list[dict], list[dict]]:
+    """Linhas de divergencias_taxa (parcial) e rastro. id_saida = DIV-REM-AAAA-MM-<Nº da operação>."""
     linhas, rastro = [], []
     for d in diferencas:
         if not acima_da_tolerancia(d, cfg):
             continue
         op = d.classificada.op
         aplicada = op.spread_pct if op.spread_pct is not None else op.spread_brl / d.base_brl * 100
+        id_saida = id_divergencia(mes, op.num_op)
         linhas.append({
-            "id_saida": op.num_op, "cnpj": op.cnpj, "linha_negocio": "REMESSA", "ref_origem": op.num_op,
+            "id_saida": id_saida, "cnpj": op.cnpj, "linha_negocio": "REMESSA", "ref_origem": op.num_op,
             "taxa_contratada_pct": d.contratado_pct, "taxa_aplicada_pct": aplicada, "diferenca_brl": d.diferenca_brl,
             "classe": d.classificada.classe.value, "regra_spread": d.regra,
             "spread_brl": op.spread_brl, "base_brl": arredondar(d.base_brl),
         })
-        rastro.append({"id_saida": op.num_op, "arquivo_origem": op.arquivo_origem, "ref_origem": op.num_op,
+        rastro.append({"id_saida": id_saida, "arquivo_origem": op.arquivo_origem, "ref_origem": op.num_op,
                        "valor": d.diferenca_brl, "ref_original": ""})
     return linhas, rastro

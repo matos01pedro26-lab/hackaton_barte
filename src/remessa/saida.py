@@ -10,7 +10,8 @@ COL_COMISSOES = ["id_saida", "cnpj", "lojista", "linha_negocio", "comissao_brl",
 COL_DIVERGENCIAS = ["id_saida", "cnpj", "linha_negocio", "ref_origem", "taxa_contratada_pct", "taxa_aplicada_pct",
                     "diferenca_brl", "classe", "regra_spread", "spread_brl", "base_brl"]
 COL_PENDENCIAS = ["id_saida", "tipo", "ref_origem", "valor_brl", "motivo", "quem_decide"]
-COL_RASTRO = ["id_saida", "arquivo_origem", "ref_origem", "valor", "ref_original"]
+COL_NOTAS = ["id_saida", "tomador_cnpj", "tomador", "linha_negocio", "valor_brl", "discriminacao"]
+COL_RASTRO =["id_saida", "arquivo_origem", "ref_origem", "valor", "ref_original"]
 COL_RESUMO = ["item", "valor"]
 
 
@@ -34,10 +35,11 @@ def validar_rastro(saidas: dict[str, tuple[list[dict], str]], rastro: list[dict]
         raise ValueError("Rastro não fecha com as saídas:\n  " + "\n  ".join(erros))
 
 
-def gravar(pasta: Path, comissoes: list[dict], divergencias: list[dict], pendencias: list[dict],
+def gravar(pasta: Path, comissoes: list[dict], divergencias: list[dict], pendencias: list[dict], notas: list[dict],
            rastro: list[dict], resumo: list[dict]) -> dict[str, int]:
     pasta = Path(pasta)
     return {
+        "remessa_notas": escrever_csv(pasta / "remessa_notas.csv", notas, COL_NOTAS),
         "remessa_comissoes": escrever_csv(pasta / "remessa_comissoes.csv", comissoes, COL_COMISSOES),
         "remessa_divergencias": escrever_csv(pasta / "remessa_divergencias.csv", divergencias, COL_DIVERGENCIAS),
         "remessa_pendencias": escrever_csv(pasta / "remessa_pendencias.csv", pendencias, COL_PENDENCIAS),
