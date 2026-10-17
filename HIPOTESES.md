@@ -94,8 +94,11 @@ As oito premissas antigas (antecipação na comissão, truncamento da Orbe, vig�
 | P12 | Os **PIX à Atlas** (R$ 249.301,77 em 2 repasses) entram em `2.1.01.001` como **repasse normal**. A pendência da Atlas é de **faturamento** (R7), não dos PIX. | A Helena disse que, sem contrato, a Atlas "não fatura, vira pendência, e o repasse continua normal" (R31). | Se fosse adiantamento, `1.1.03.003`. |
 | P13 | Os **ajustes tardios da Orbe** (arquivo 06, todos com `data_movimento` 30/09) entram em **setembro**, pela data do movimento. | Foram datados 30/09 e o arquivo é de set/2026. Para a Ponte a Helena disse que o ajuste entra no mês em que aparece; aqui assumimos que são lançamentos de setembro que chegaram depois do relatório. | Se valerem em outubro, a comissão de setembro sobe R$ 3.304,39 e sai da de outubro. |
 | P14 | **Após 31/12/2026 a Casa do Estudante volta às taxas da planilha** (linha `TABELA (retomada)` em `dim_contrato_taxa`, vigente a partir de 2027-01-01). | A Helena só deu "setembro a dezembro". | Se a isenção continuar, a tabela precisa de uma nova condição em `config/condicoes_comerciais.csv`. |
-| P15 | **Fluente Idiomas: o Pix a 0,79% da planilha é pendência**, e é um achado a destacar no case. Os demais lojistas têm 0,89%. A Orbe cobrou 0,79% nas 8 vendas de Pix da Fluente, então não há divergência entre planilha e Orbe; calculamos a comissão pela planilha como está e abrimos pendência com as 8 transações, para o comercial (quem aprova taxa) confirmar. | Parece erro de digitação na planilha, e é o tipo de erro que o fechamento manual não percebe. Decisão do grupo em 17/10. | Se o contrato real for 0,89%, a Orbe cobrou 0,10 p.p. a menos nessas 8 vendas e a comissão de Pix da Fluente está subestimada. |
+| P15 | **Fluente Idiomas: o Pix a 0,79% da planilha é pendência**, e é um achado a destacar no case. Os demais lojistas têm 0,89%. A Orbe cobrou 0,79% nas 8 vendas de Pix da Fluente, então não há divergência entre planilha e Orbe; calculamos a comissão pela planilha como está e abrimos pendência com as 8 transações, para o comercial (quem aprova taxa) confirmar. Registrada em `config/taxas_a_confirmar.csv`; a pendência `TAXA_A_CONFIRMAR` vale R$ 9,16 (comissão a 0,89% menos a 0,79%, arredondada por linha). | Parece erro de digitação na planilha, e é o tipo de erro que o fechamento manual não percebe. Decisão do grupo em 17/10. | Se o contrato real for 0,89%, a Orbe cobrou 0,10 p.p. a menos nessas 8 vendas e a comissão de Pix da Fluente está subestimada. |
 | P16 | O **valor da divergência de remessa** é `Spread R$` realizado − spread contratado × Valor ME × PTAX (valor cheio), em `Decimal`, arredondado ao centavo por operação. | Usa o valor que a Ponte pagou, sem passar pelo `spread_pct` do relatório, que vem arredondado. | Pelo `spread_pct` a Mundo Aberto daria R$ 1.418,85 em vez de R$ 1.418,88 (3 centavos). |
+| P17 | **Comissão de checkout zero ou negativa fica em `comissoes_por_lojista` com o valor real** e vira pendência `COMISSAO_NAO_POSITIVA` (não emite nota, R10). Em setembro, só a Casa do Estudante (−R$ 5,50). A Atlas fica fora do arquivo (R31, escolha nossa). | O número precisa fechar com o rastro; a regra de não emitir é da nota, não da comissão. | Se o gabarito tirar a linha, o total de checkout sobe R$ 5,50 e a Casa sai do arquivo. |
+| P18 | **Ids do checkout**, no mesmo padrão da remessa: `CHK-AAAA-MM-<cnpj>` (comissão), `DIV-CHK-AAAA-MM-<id_transacao>` (divergência) e `PEN-CHK-AAAA-MM-<tipo>-<chave>` (pendência). Nas pendências, `ref_origem` lista as transações da Orbe separadas por `\|`, como a `CONTESTACAO_PONTE`. | Chaves naturais, estáveis entre meses; o rastro leva cada número às linhas de origem. | Só muda o identificador, não os valores. |
+| P19 | **Valor de cada pendência do checkout = o que está em jogo**: EC retido = soma do bruto (não há taxa contratada); `CONTESTACAO_ORBE` = soma das divergências do lojista (R29); `DEVOLUCAO_CONDICAO` = o que a Orbe cobrou, `valor_taxa` (R28); `CADASTRO_EC` = comissão que depende do mapeamento em `config/`; `CADASTRO_CONDICAO` = comissão que a planilha cobraria; `TAXA_A_CONFIRMAR` = quanto a comissão mudaria (P15); sem taxa = bruto. | Dá ao financeiro o tamanho de cada decisão, sempre com rastro até as transações. | Só muda a coluna `valor_brl` de `pendencias.csv`. |
 
 ### Detalhe da P9 (contribuição do Gabriel, commit `90d0d6b`; era a "P1" do arquivo dele) — superada pela R27, mantida como histórico
 
@@ -146,6 +149,17 @@ Estão redigidas, com exemplo, em [PERGUNTAS_FINANCEIRO.md](PERGUNTAS_FINANCEIRO
 
 Decisões do grupo, que não são perguntas ao financeiro: o critério do alerta de antecipação (R32) e se a Atlas sai com comissão zerada e pendência ou fora do arquivo (R31).
 
+### 3.1 Pendências de cadastro com o financeiro
+
+São dados que pertencem à planilha de taxas, mantida pelo financeiro, e que só conseguimos perguntando. A solução aplica a resposta por `config/`, mas a planilha continua incompleta. Por isso cada item fica **pendente para o financeiro** até a planilha ser corrigida. A coluna `pendencia_financeiro` dos arquivos de `config/` diz o que corrigir e alimenta o `pendencias.csv` do checkout (`CADASTRO_EC` e `CADASTRO_CONDICAO`). Depois da correção na planilha, a linha correspondente em `config/` pode sair.
+
+| Item | O que falta na planilha | Configuração usada hoje | Base |
+|---|---|---|---|
+| Kiwi Experience | EC Orbe `1038867654` na linha 9 (obs "EC pendente") | `config/mapeamento_ec.csv` | R6 |
+| Horizonte Viagens | EC Orbe `1043396662` na linha 8 | `config/mapeamento_ec.csv` | R6 |
+| Novo Horizonte Intercambio | EC Orbe `1043300981` na linha 28 | `config/mapeamento_ec.csv` | R6 |
+| Casa do Estudante | Taxa zerada de 01/09 a 31/12/2026; a linha 13 só tem o comentário "conversar com Diego (comercial) sobre condição especial" | `config/condicoes_comerciais.csv` (ingestão) e `config/condicoes_especiais.csv` (checkout) | R8 |
+
 ---
 
 ## 4. Achados que mudam número
@@ -161,6 +175,7 @@ Números do notebook `analise_setembro.ipynb` (prévias; o financeiro disse que 
 - **Remessa fecha com o banco**: cada um dos 21 TEDs para a Ponte é a soma de (Valor R$ + IOF) das operações do dia, e o PIX de cada lojista é a soma das suas operações (13 de 14 exatos). A exceção é o PIX de R$ 18.240,00 (R19).
 - **Checkout não fecha com o banco**, e o financeiro disse que não é preciso neste fechamento (R24).
 - **Estornos de venda de agosto**: 9 linhas, −R$ 941,70 de taxa, abatendo a comissão de setembro.
+- **Checkout calculado por `src/checkouts`** (com os ajustes tardios): **R$ 203.735,34 em 21 lojistas** (os R$ 203.740,84 dos 20 com nota menos os −R$ 5,50 da Casa, P17), 1.900 linhas no rastro e 57 da Atlas retidas. **Divergências: 92 linhas, R$ 1.576,23** (Rota Global R$ 1.546,28; Bridge R$ 29,95). São 10 pendências: Atlas (comercial), Fluente (comercial, P15), Casa negativa, devolução da Casa (R$ 15.396,77, R28), 2 contestações com a Orbe (R29) e 4 de cadastro (seção 3.1). Batem com a prévia independente e com o notebook.
 
 ---
 
@@ -171,3 +186,6 @@ Números do notebook `analise_setembro.ipynb` (prévias; o financeiro disse que 
 - **Sem banco transacional**: processamento em lote. Atomicidade por publicação em `saida/` só depois das validações.
 - **IA só onde há ambiguidade**: classificação de lançamentos sem padrão claro e sugestão de lojista por nome (sempre com confiança baixa e revisão humana). Números vêm sempre do código, com rastro.
 - **Versionamento**: um commit por versão, pela skill `commit-versao`.
+- **Código particionado por domínio**: `src/<dominio>/`, com camadas leves dentro de cada um. O checkout está em `src/checkouts/` (leitura → regras → comissão e divergência → saída) e lê só `data/` e `config/`. Os CSVs saem com exatamente as colunas do edital.
+- **Testes**: `python -m unittest discover -s tests -t .` (só biblioteca padrão). Os testes do checkout cobrem as regras pela interface pública e garantem determinismo: a mesma entrada em qualquer ordem dá o mesmo resultado, e duas execuções geram os mesmos bytes.
+- **Em aberto: condição da Casa em dois arquivos.** A ingestão aplica `config/condicoes_comerciais.csv` em `dim_contrato_taxa` (linha `CONFIG`), e o checkout lê `config/condicoes_especiais.csv` para a taxa, a devolução e a pendência de cadastro. Os dois dizem 0% de 01/09 a 31/12; unificar em um só antes de outubro.

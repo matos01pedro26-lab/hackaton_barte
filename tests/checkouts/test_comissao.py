@@ -3,7 +3,7 @@ import unittest
 from decimal import Decimal
 
 from src.checkouts.comissao import calcular
-from tests.checkouts.exemplos import CNPJ_A, CNPJ_B, condicao, contrato, ec, entrada, mapeamento, transacao
+from tests.checkouts.exemplos import CNPJ_A, CNPJ_B, condicao, contrato, ec, entrada, mapeamento, taxa_a_confirmar, transacao
 
 
 def soma_rastro(resultado, id_saida):
@@ -84,7 +84,7 @@ class ComissaoPorLojista(unittest.TestCase):
         self.assertEqual(len(r.pendencias), 1)
         p = r.pendencias[0]
         self.assertEqual(p["tipo"], "EC_RETIDO")
-        self.assertEqual(p["ref_origem"], "1076801732")
+        self.assertEqual(p["ref_origem"], "TX2|TX3")  # as transações, como na remessa
         self.assertEqual(p["valor_brl"], Decimal("500.00"))
         self.assertEqual(p["quem_decide"], "Comercial")
         self.assertIn("nao faturar a Atlas", p["motivo"])
@@ -117,7 +117,7 @@ class ComissaoPorLojista(unittest.TestCase):
         nao_positivas = [p for p in r.pendencias if p["tipo"] == "COMISSAO_NAO_POSITIVA"]
         self.assertEqual(len(nao_positivas), 1)
         p = nao_positivas[0]
-        self.assertEqual(p["ref_origem"], f"CHK-2026-09-{CNPJ_A}")
+        self.assertEqual(p["ref_origem"], "TX1|TX2")
         self.assertEqual(p["valor_brl"], Decimal("-5.50"))
         self.assertEqual(p["quem_decide"], "Financeiro")
         self.assertEqual(soma_rastro(r, p["id_saida"]), p["valor_brl"])
@@ -134,9 +134,9 @@ class ComissaoPorLojista(unittest.TestCase):
 
         cad = {p["tipo"]: p for p in r.pendencias if p["tipo"].startswith("CADASTRO")}
         self.assertEqual(set(cad), {"CADASTRO_EC", "CADASTRO_CONDICAO"})
-        self.assertEqual(cad["CADASTRO_EC"]["ref_origem"], "1000000009")
+        self.assertEqual(cad["CADASTRO_EC"]["ref_origem"], "TX2|TX3")
         self.assertEqual(cad["CADASTRO_EC"]["valor_brl"], Decimal("27.79"))      # comissão que depende do mapeamento
-        self.assertEqual(cad["CADASTRO_CONDICAO"]["ref_origem"], f"{CNPJ_A}/TODAS")
+        self.assertEqual(cad["CADASTRO_CONDICAO"]["ref_origem"], "TX1")
         self.assertEqual(cad["CADASTRO_CONDICAO"]["valor_brl"], Decimal("26.90"))  # o que a planilha cobraria
         self.assertIn("Registrar a taxa zerada", cad["CADASTRO_CONDICAO"]["motivo"])
         for p in cad.values():
@@ -156,6 +156,22 @@ class ComissaoPorLojista(unittest.TestCase):
         cond = next(p for p in r.pendencias if p["tipo"] == "CADASTRO_CONDICAO")
         self.assertEqual(cond["valor_brl"], Decimal("26.90"))  # 2,69% da planilha, não os 0% da linha CONFIG
         self.assertEqual(soma_rastro(r, cond["id_saida"]), cond["valor_brl"])
+
+    def test_taxa_da_planilha_sob_suspeita_vira_pendencia_sem_mudar_a_comissao(self):
+        # P15 (Fluente): planilha e Orbe dizem 0,79% no Pix; o grupo suspeita de digitação (os demais têm 0,89%)
+        contratos = [contrato(taxa_pix_pct="0.79")]
+        r = calcular(entrada([transacao("TX1", faixa="pix", bruto="1000.00", aplicada="0.79"),
+                              transacao("TX2", faixa="pix", bruto="555.00", aplicada="0.79"),
+                              transacao("TX3", bruto="100.00")],
+                             contratos=contratos, taxas_a_confirmar=[taxa_a_confirmar()]))
+
+        self.assertEqual(r.comissoes[0]["comissao_brl"], Decimal("14.97"))  # 7,90 + 4,38 + 2,69: pela planilha
+        self.assertEqual(r.divergencias, [])
+        p = next(p for p in r.pendencias if p["tipo"] == "TAXA_A_CONFIRMAR")
+        self.assertEqual(p["ref_origem"], "TX1|TX2")
+        self.assertEqual(p["valor_brl"], Decimal("1.56"))  # 1,00 + 0,56 (0,555): o que a comissão subiria a 0,89%
+        self.assertEqual(p["quem_decide"], "Comercial")
+        self.assertEqual(soma_rastro(r, p["id_saida"]), p["valor_brl"])
 
     def test_resultado_nao_depende_da_ordem_das_linhas_de_entrada(self):
         linhas = [transacao("TX3", cnpj=CNPJ_B, bruto="10.00"), transacao("TX1", bruto="1000.00"),

@@ -1,4 +1,6 @@
 """Linhas mínimas no formato das tabelas de data/ e config/, para montar cenários nos testes."""
+from decimal import ROUND_DOWN, Decimal
+
 from src.checkouts.comissao import Entrada
 
 CNPJ_A = "11111111000111"
@@ -11,13 +13,16 @@ APLICADA_PADRAO = {"debito": "1.49", "credito_a_vista": "2.69", "credito_2_6x": 
 
 
 def transacao(id_transacao, cnpj=CNPJ_A, faixa="credito_a_vista", bruto="100.00", data="2026-09-10",
-              tipo="VENDA", ec="1000000001", status_ec="CONFIRMADO", data_venda_original="", aplicada=None):
+              tipo="VENDA", ec="1000000001", status_ec="CONFIRMADO", data_venda_original="", aplicada=None,
+              valor_taxa=None):
     aplicada = aplicada or APLICADA_PADRAO[faixa]
+    # Como a Orbe faz: bruto × taxa aplicada, truncado no centavo
+    valor_taxa = valor_taxa or str((Decimal(bruto) * Decimal(aplicada) / 100).quantize(Decimal("0.01"), ROUND_DOWN))
     return {
         "arquivo_origem": "01_orbe_relatorio_comissoes_set2026.csv", "id_transacao": id_transacao,
         "data_movimento": data, "ec": ec, "status_ec": status_ec, "cnpj": cnpj if status_ec == "CONFIRMADO" else "",
         "nome_estabelecimento": "LOJA", "tipo_lancamento": tipo, "faixa": faixa, "valor_bruto": bruto,
-        "data_venda_original": data_venda_original, "taxa_aplicada_pct": aplicada,
+        "data_venda_original": data_venda_original, "taxa_aplicada_pct": aplicada, "valor_taxa": valor_taxa,
     }
 
 
@@ -47,7 +52,14 @@ def ec(codigo="1000000001", cnpj=CNPJ_A, status="CONFIRMADO", fonte="tabela_taxa
     return {"ec": codigo, "status": status, "cnpj": cnpj, "fonte_mapeamento": fonte, "observacao": observacao}
 
 
-def entrada(transacoes, contratos=None, lojistas=None, ecs=None, mapeamento=None, condicoes=None):
+def taxa_a_confirmar(cnpj=CNPJ_A, faixa="pix", referencia="0.89"):
+    return {"cnpj": cnpj, "faixa": faixa, "taxa_referencia_pct": referencia, "quem_decide": "Comercial",
+            "motivo": "Pix a 0,79% na planilha; os demais lojistas têm 0,89%", "fonte": "Decisão do grupo (P15)",
+            "registrado_em": "2026-10-17"}
+
+
+def entrada(transacoes, contratos=None, lojistas=None, ecs=None, mapeamento=None, condicoes=None,
+            taxas_a_confirmar=None):
     return Entrada(
         competencia="2026-09",
         transacoes=transacoes,
@@ -56,4 +68,5 @@ def entrada(transacoes, contratos=None, lojistas=None, ecs=None, mapeamento=None
         ecs=ecs if ecs is not None else [ec()],
         mapeamento=mapeamento or [],
         condicoes=condicoes or [],
+        taxas_a_confirmar=taxas_a_confirmar or [],
     )

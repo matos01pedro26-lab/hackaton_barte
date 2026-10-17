@@ -25,12 +25,12 @@ class DivergenciaDeTaxa(unittest.TestCase):
                              contratos=[contrato(taxa_credito_vista_pct="2.49")]))
 
         self.assertEqual(r.divergencias, [{
-            "id_saida": "TX1", "cnpj": CNPJ_A, "linha_negocio": "CHECKOUT", "ref_origem": "TX1",
+            "id_saida": "DIV-CHK-2026-09-TX1", "cnpj": CNPJ_A, "linha_negocio": "CHECKOUT", "ref_origem": "TX1",
             "taxa_contratada_pct": Decimal("2.49"), "taxa_aplicada_pct": Decimal("2.99"),
             "diferenca_brl": Decimal("5.00"),
         }])
         self.assertEqual(list(r.divergencias[0]), COLUNAS)
-        self.assertEqual(soma_rastro(r, "TX1"), Decimal("5.00"))
+        self.assertEqual(soma_rastro(r, "DIV-CHK-2026-09-TX1"), Decimal("5.00"))
 
     def test_bridge_compara_com_a_taxa_vigente_e_estorno_inverte_o_sinal(self):
         # 2,59% até 14/09, 2,19% a partir de 15/09; estorno usa a taxa da data da venda original (R2)
@@ -48,16 +48,23 @@ class DivergenciaDeTaxa(unittest.TestCase):
         self.assertEqual(diferencas(r), {"TX2": Decimal("4.00"), "TX3": Decimal("-2.00")})
         self.assertEqual(r.divergencias[0]["taxa_contratada_pct"], Decimal("2.19"))
 
-    def test_condicao_especial_faz_toda_a_taxa_cobrada_virar_divergencia(self):
-        # Casa (R8): contratada 0% de set a dez; o estorno de venda de agosto segue a planilha e não diverge
+    def test_concessao_comercial_nao_e_divergencia_e_vira_devolucao_do_que_a_orbe_cobrou(self):
+        # Casa (R8, R28, R29): tarifa zerada é concessão fora do contrato, então não entra em divergencias_taxa.
+        # A Tarvo devolve o que a Orbe efetivamente cobrou (valor_taxa, truncado), não bruto × taxa.
         r = calcular(entrada([
-            transacao("TX1", bruto="1000.00", aplicada="2.69"),
+            transacao("TX1", bruto="1000.50", aplicada="2.69"),            # Orbe cobrou 26,91 (26,913 truncado)
+            transacao("AN1", faixa="antecipacao", tipo="ANTECIPACAO", bruto="5000.00", aplicada="2.1"),
             transacao("TX2", faixa="debito", tipo="ESTORNO", bruto="-369.39", data="2026-09-07",
-                      data_venda_original="2026-08-21", aplicada="1.49"),
+                      data_venda_original="2026-08-21", aplicada="1.49"),  # venda de agosto: fora da isenção
         ], condicoes=[condicao()]))
 
-        self.assertEqual(diferencas(r), {"TX1": Decimal("26.90")})
-        self.assertEqual(r.divergencias[0]["taxa_contratada_pct"], Decimal("0"))
+        self.assertEqual(r.divergencias, [])
+        dev = [p for p in r.pendencias if p["tipo"] == "DEVOLUCAO_CONDICAO"]
+        self.assertEqual(len(dev), 1)
+        self.assertEqual(dev[0]["valor_brl"], Decimal("131.91"))  # 26,91 + 105,00
+        self.assertEqual(dev[0]["quem_decide"], "Financeiro")
+        self.assertEqual(soma_rastro(r, dev[0]["id_saida"]), Decimal("131.91"))
+        self.assertEqual({x["ref_origem"] for x in r.rastro if x["id_saida"] == dev[0]["id_saida"]}, {"TX1", "AN1"})
 
     def test_sem_taxa_contratada_nao_ha_divergencia(self):
         # Atlas (R7) e transação sem contrato vigente já são pendências; não se inventa taxa para comparar
@@ -75,8 +82,8 @@ class DivergenciaDeTaxa(unittest.TestCase):
 
         self.assertEqual(diferencas(r), {"TX1": Decimal("0.01"), "TX2": Decimal("-0.01")})
 
-    def test_divergencia_vira_uma_pendencia_de_devolucao_por_lojista(self):
-        # Divergência é devolução: a Tarvo devolve ao lojista o que a Orbe cobrou a mais (Helena)
+    def test_divergencia_vira_uma_contestacao_com_a_orbe_por_lojista(self):
+        # R29: o contrato decide; a Tarvo contesta a Orbe e ressarce o lojista (como a CONTESTACAO_PONTE da remessa)
         r = calcular(entrada([
             transacao("TX1", bruto="1000.00", aplicada="3.19"),
             transacao("TX2", bruto="-200.00", tipo="ESTORNO", data_venda_original="2026-09-01", aplicada="3.19"),
@@ -84,13 +91,14 @@ class DivergenciaDeTaxa(unittest.TestCase):
             transacao("TX4", cnpj=CNPJ_B, bruto="100.00"),
         ], contratos=[contrato(), contrato(CNPJ_B, linha="12")]))
 
-        dev = [p for p in r.pendencias if p["tipo"] == "DEVOLUCAO_DIVERGENCIA"]
+        dev = [p for p in r.pendencias if p["tipo"] == "CONTESTACAO_ORBE"]
         self.assertEqual(len(dev), 1)  # B não tem divergência
         p = dev[0]
-        self.assertEqual(p["ref_origem"], CNPJ_A)
+        self.assertEqual(p["ref_origem"], "TX1|TX2")
         self.assertEqual(p["valor_brl"], Decimal("4.00"))  # 5,00 da venda − 1,00 do estorno
         self.assertEqual(p["quem_decide"], "Financeiro")
         self.assertIn("Loja A Ltda", p["motivo"])
+        self.assertIn("contestar a Orbe", p["motivo"])
         self.assertEqual(soma_rastro(r, p["id_saida"]), p["valor_brl"])
         self.assertEqual({x["ref_origem"] for x in r.rastro if x["id_saida"] == p["id_saida"]}, {"TX1", "TX2"})
 

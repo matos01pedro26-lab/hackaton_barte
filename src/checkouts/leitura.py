@@ -30,4 +30,5 @@ def ler_entrada(mes: str, dados: Path, config: Path) -> Entrada:
         ecs=ler_tabela(dados / "dim_ec.csv"),
         mapeamento=ler_tabela(config / "mapeamento_ec.csv", obrigatorio=False),
         condicoes=ler_tabela(config / "condicoes_especiais.csv", obrigatorio=False),
+        taxas_a_confirmar=ler_tabela(config / "taxas_a_confirmar.csv", obrigatorio=False),
     )
