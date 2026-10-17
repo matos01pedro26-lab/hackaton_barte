@@ -588,7 +588,7 @@ def construir_dim_lojista(contratos: list[dict], dim_ec: list[dict], ponte: list
             "ecs": " | ".join(sorted(ecs_por_cnpj.get(cnpj, []))),
             "ativo": "inativo" not in norm_cabecalho(texto_obs), "linha_checkout": bool(tem_taxa or ecs_por_cnpj.get(cnpj)),
             "linha_remessa": remessa, "status_cadastro": "NA_TABELA",
-            "obs_tabela": " | ".join(x for x in {r["obs"] for r in rows} if x),
+            "obs_tabela": " | ".join(x for x in dict.fromkeys(r["obs"] for r in rows) if x),
             "linha_planilha": " | ".join(str(n) for n in sorted({r["linha_planilha"] for r in rows})),
         })
     for e in dim_ec:

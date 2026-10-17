@@ -1,11 +1,19 @@
-"""Parâmetros do módulo de remessa. Nada de regra solta no código: o que pode mudar de um mês para o outro vive em config/remessa.json."""
+"""Parâmetros do módulo de remessa. Nada de regra solta no código.
+
+Duas fontes, cada valor em um lugar só:
+  * config/parametros.csv: parâmetros compartilhados com a ingestão (spread padrão e tolerância do spread, com fonte e quem aprovou);
+  * config/remessa.json: o que é só da remessa (participação da Tarvo, tolerância em reais, padrão do ajuste, quem decide).
+"""
 from __future__ import annotations
 
+import csv
 import json
 import re
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
+
+from ..utils import ler_texto
 
 
 @dataclass(frozen=True)
@@ -18,13 +26,20 @@ class Config:
     quem_decide: dict[str, str]
 
 
-def carregar_config(caminho: Path) -> Config:
-    bruto = json.loads(Path(caminho).read_text(encoding="utf-8"))
+def ler_parametros(caminho: Path) -> dict[str, str]:
+    texto, _ = ler_texto(caminho)
+    return {l["chave"].strip(): l["valor"].strip() for l in csv.DictReader(texto.splitlines(), delimiter=";") if l.get("chave")}
+
+
+def carregar_config(caminho: Path, parametros: Path | None = None) -> Config:
+    caminho = Path(caminho)
+    bruto = json.loads(caminho.read_text(encoding="utf-8"))
+    comuns = ler_parametros(Path(parametros) if parametros else caminho.parent / "parametros.csv")
     return Config(
         participacao_tarvo=Decimal(bruto["participacao_tarvo"]),
-        spread_padrao_pct=Decimal(bruto["spread_padrao_pct"]),
+        spread_padrao_pct=Decimal(comuns["spread_padrao_pct"]),
         tolerancia_brl=Decimal(bruto["tolerancia_brl"]),
-        tolerancia_pp=Decimal(bruto.get("tolerancia_pp", "0")),
+        tolerancia_pp=Decimal(comuns["tolerancia_spread_pp"]),
         padrao_ajuste=re.compile(bruto["padrao_ajuste"], re.IGNORECASE),
         quem_decide=dict(bruto["quem_decide"]),
     )
