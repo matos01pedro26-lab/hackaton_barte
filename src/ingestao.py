@@ -1,7 +1,10 @@
 """Ingestão: transforma os arquivos brutos do data pack em tabelas padronizadas (CSV) na pasta de saída.
 
 Uso (a partir da raiz do repositório):
-    python -m src.ingestao --mes 2026-09 --entrada . --saida data
+    python -m src.ingestao --mes 2026-09 --entrada input --saida data
+
+Todos os arquivos de entrada ficam em input/. Além dos 6 arquivos base (01 a 05b), qualquer outro arquivo no formato
+da Orbe do mesmo mês (ex.: 06_orbe_ajustes_tardios_set2026.csv) entra em fato_orbe com seu arquivo e seu lote.
 
 Gera 7 tabelas + 1 arquivo de controle:
     dim_lojista, dim_ec, dim_contrato_taxa, dim_plano_contas, fato_orbe, fato_ponte, fato_banco,
@@ -28,7 +31,7 @@ from decimal import Decimal, ROUND_DOWN
 from email import policy
 from pathlib import Path
 
-from .utils import (achar_arquivo, cnpj14, data_br, data_serial_excel, ec_texto, escrever_csv, ler_texto,
+from .utils import (MESES, achar_arquivo, cnpj14, data_br, data_serial_excel, ec_texto, escrever_csv, ler_texto,
                     ler_xlsx, norm_cabecalho, norm_nome, num_br, num_ponto, pct_planilha, sha256, so_digitos)
 
 # ----------------------------------------------------------------------------- esquemas das tabelas
@@ -44,7 +47,7 @@ COL_DIM_CONTRATO = ["lojista_id", "cnpj", "cnpj_ajustado", "ec", "ec_fonte", "no
                     "condicao_aprovada_por", "pct_em_texto", "obs", "comentario_celula", "linha_planilha"]
 COL_DIM_PLANO = ["cod_conta", "descricao", "tipo", "natureza", "aceita_lancamento", "cod_superior", "nivel",
                  "dt_criacao"]
-COL_FATO_ORBE = ["competencia", "arquivo_origem", "linha_origem", "id_transacao", "data_movimento", "ec",
+COL_FATO_ORBE = ["competencia", "arquivo_origem", "lote", "linha_origem", "id_transacao", "data_movimento", "ec",
                  "status_ec", "cnpj", "nome_estabelecimento", "tipo_lancamento", "modalidade", "faixa", "parcelas",
                  "bandeira", "valor_bruto", "taxa_aplicada_pct", "valor_taxa", "valor_liquido", "id_referencia",
                  "data_venda_original", "data_taxa_ref", "flag_ref_sem_origem", "flag_venda_mes_anterior"]
@@ -83,20 +86,77 @@ def dec_br(s: str) -> Decimal:
 
 
 # ----------------------------------------------------------------------------- leitura: Orbe
-def ler_orbe(caminho: Path, ctl: Controle) -> list[dict]:
+def ler_orbe(caminho: Path, ctl: Controle, lote: str = "BASE") -> list[dict]:
+    """Lê um arquivo no formato do relatório da Orbe. Cada linha leva o arquivo e o lote de onde veio."""
     texto, enc = ler_texto(caminho)
     leitor = csv.DictReader(io.StringIO(texto), delimiter=";")
     faltando = [c for c in ORBE_COLUNAS if c not in (leitor.fieldnames or [])]
     if faltando:
-        raise ValueError(f"Orbe fora do contrato: faltam colunas {faltando}")
+        raise ValueError(f"{caminho.name} fora do contrato da Orbe: faltam colunas {faltando}")
     linhas = []
     for r in leitor:
         r = {k: (v or "").strip() for k, v in r.items()}
         r["_linha"] = leitor.line_num
+        r["_arquivo"], r["_lote"] = caminho.name, lote
         linhas.append(r)
-    ctl.add("ARQUIVO", "orbe", "arquivo", caminho.name, f"encoding={enc}")
-    ctl.add("ARQUIVO", "orbe", "sha256", sha256(caminho))
-    ctl.add("CONTAGEM", "orbe", "linhas_lidas", len(linhas))
+    ctl.add("ARQUIVO", "orbe", "arquivo", caminho.name, f"lote={lote}; encoding={enc}")
+    ctl.add("ARQUIVO", "orbe", "sha256", sha256(caminho), caminho.name)
+    ctl.add("CONTAGEM", "orbe", "linhas_lidas", len(linhas), f"{caminho.name} (lote {lote})")
+    return linhas
+
+
+def achar_complementos_orbe(entrada: Path, mes: str, base: Path) -> list[Path]:
+    """Outros arquivos no formato da Orbe do mesmo mês (ex.: '06_orbe_ajustes_tardios_set2026.csv').
+    Só entram os que trazem a marca do mês no nome, para não misturar meses que sobraram na pasta."""
+    ano, m = mes.split("-")
+    marca = f"{MESES[int(m) - 1]}{ano}"
+    return sorted(p for p in Path(entrada).glob("[0-9][0-9]_orbe_*.csv")
+                  if p.resolve() != base.resolve() and marca in p.name.lower())
+
+
+def lote_do_arquivo(caminho: Path) -> str:
+    return "TARDIO" if "tardio" in caminho.name.lower() else "COMPLEMENTO"
+
+
+def ler_orbe_completo(base: Path, complementos: list[Path], ctl: Controle) -> list[dict]:
+    """Base + complementos numa lista só. O Nº da transação tem que ser único entre todos os arquivos, e todo
+    estorno ou reversão que chegou depois precisa apontar para uma linha que existe, de sinal oposto,
+    do mesmo EC e com a mesma taxa."""
+    linhas = ler_orbe(base, ctl, "BASE")
+    for comp in complementos:
+        linhas += ler_orbe(comp, ctl, lote_do_arquivo(comp))
+    vistos: dict[str, dict] = {}
+    for r in linhas:
+        antes = vistos.get(r["id_transacao"])
+        if antes is not None:
+            raise ValueError(f"Nº de transação repetido entre arquivos: {r['id_transacao']} em "
+                             f"{antes['_arquivo']} (linha {antes['_linha']}) e {r['_arquivo']} (linha {r['_linha']})")
+        vistos[r["id_transacao"]] = r
+    tardias = [r for r in linhas if r["_lote"] != "BASE"]
+    if tardias:
+        sem_origem, incoerentes = [], []
+        for r in tardias:
+            if not r["id_referencia"]:
+                continue
+            o = vistos.get(r["id_referencia"])
+            if o is None:
+                sem_origem.append(r["id_transacao"])
+            elif not (dec_br(r["valor_bruto"]) == -dec_br(o["valor_bruto"]) and r["taxa_aplicada_pct"] == o["taxa_aplicada_pct"]
+                      and r["cod_estabelecimento"] == o["cod_estabelecimento"]):
+                incoerentes.append(r["id_transacao"])
+        ctl.verifica("orbe", "ajustes_tardios_apontam_para_linha_existente", not sem_origem,
+                     f"sem origem={sem_origem}" if sem_origem else f"{len(tardias)} linhas fora da base, todas com origem encontrada")
+        ctl.verifica("orbe", "ajustes_tardios_com_valor_oposto_mesma_taxa_e_mesmo_ec", not incoerentes,
+                     f"incoerentes={incoerentes}" if incoerentes else "valor oposto, mesma taxa e mesmo EC da linha original")
+        refs = Counter(r["id_referencia"] for r in linhas if r["id_referencia"])
+        repetidas = sorted(k for k, q in refs.items() if q > 1)
+        ctl.verifica("orbe", "venda_estornada_ou_revertida_mais_de_uma_vez", not repetidas,
+                     f"repetidas={repetidas}" if repetidas else "cada linha original é estornada ou revertida no máximo uma vez")
+        for lote in sorted({r["_lote"] for r in tardias}):
+            do_lote = [r for r in tardias if r["_lote"] == lote]
+            liq = sum(dec_br(r["valor_liquido"]) for r in do_lote)
+            ctl.add("CONTAGEM", "orbe", f"liquido_do_lote_{lote}", float(liq),
+                    f"{len(do_lote)} linhas; efeito no líquido reportado ({', '.join(f'{t}={q}' for t, q in Counter(r['tipo_lancamento'] for r in do_lote).items())})")
     return linhas
 
 
@@ -588,7 +648,7 @@ def construir_dim_lojista(contratos: list[dict], dim_ec: list[dict], ponte: list
             "ecs": " | ".join(sorted(ecs_por_cnpj.get(cnpj, []))),
             "ativo": "inativo" not in norm_cabecalho(texto_obs), "linha_checkout": bool(tem_taxa or ecs_por_cnpj.get(cnpj)),
             "linha_remessa": remessa, "status_cadastro": "NA_TABELA",
-            "obs_tabela": " | ".join(x for x in dict.fromkeys(r["obs"] for r in rows) if x),
+            "obs_tabela": " | ".join(sorted(x for x in {r["obs"] for r in rows} if x)),
             "linha_planilha": " | ".join(str(n) for n in sorted({r["linha_planilha"] for r in rows})),
         })
     for e in dim_ec:
@@ -603,8 +663,7 @@ def construir_dim_lojista(contratos: list[dict], dim_ec: list[dict], ponte: list
 
 
 # ----------------------------------------------------------------------------- construção dos fatos
-def construir_fato_orbe(orbe: list[dict], dim_ec: list[dict], arquivo: str, competencia: str,
-                        ctl: Controle) -> list[dict]:
+def construir_fato_orbe(orbe: list[dict], dim_ec: list[dict], competencia: str, ctl: Controle) -> list[dict]:
     ec_info = {e["ec"]: e for e in dim_ec}
     ids = {r["id_transacao"] for r in orbe}
     inicio = f"{competencia}-01"
@@ -620,7 +679,7 @@ def construir_fato_orbe(orbe: list[dict], dim_ec: list[dict], arquivo: str, comp
         venda_orig = data_br(r["data_venda_original"])
         data_mov = data_br(r["data_movimento"])
         linhas.append({
-            "competencia": competencia, "arquivo_origem": arquivo, "linha_origem": r["_linha"],
+            "competencia": competencia, "arquivo_origem": r["_arquivo"], "lote": r["_lote"], "linha_origem": r["_linha"],
             "id_transacao": r["id_transacao"], "data_movimento": data_mov, "ec": ec,
             "status_ec": ec_info[ec]["status"], "cnpj": ec_info[ec]["cnpj"] if ec_info[ec]["status"] == "CONFIRMADO" else "",
             "nome_estabelecimento": r["nome_estabelecimento"], "tipo_lancamento": r["tipo_lancamento"],
@@ -744,7 +803,8 @@ def executar(mes: str, entrada: Path, saida: Path) -> dict[str, int]:
     f_aurora = achar_arquivo(entrada, "05a_extrato_banco_aurora", ".csv", mes)
     f_meridiano = achar_arquivo(entrada, "05b_extrato_banco_meridiano", ".ofx", mes)
 
-    orbe_raw = ler_orbe(f_orbe, ctl)
+    complementos_orbe = achar_complementos_orbe(entrada, mes, f_orbe)
+    orbe_raw = ler_orbe_completo(f_orbe, complementos_orbe, ctl)
     contratos = ler_tabela_taxas(f_taxas, ctl)
     ponte_raw, arquivo_ponte = ler_ponte(f_ponte, ctl)
     plano = ler_plano(f_plano, ctl)
@@ -768,7 +828,7 @@ def executar(mes: str, entrada: Path, saida: Path) -> dict[str, int]:
     checar_integridade_dim_ec(dim_ec, orbe_raw, contratos, overrides, ctl)
     dim_lojista = construir_dim_lojista(contratos, dim_ec, ponte_raw)
     contratos_out = montar_contratos(contratos)
-    fato_orbe = construir_fato_orbe(orbe_raw, dim_ec, f_orbe.name, mes, ctl)
+    fato_orbe = construir_fato_orbe(orbe_raw, dim_ec, mes, ctl)
     fato_ponte = construir_fato_ponte(ponte_raw, arquivo_ponte, mes, contratos, params, ctl)
     fato_banco = aurora + meridiano
     enriquecer_banco(fato_banco, ctl)
@@ -814,7 +874,7 @@ def executar(mes: str, entrada: Path, saida: Path) -> dict[str, int]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Ingestão do data pack da Tarvo em tabelas padronizadas (CSV).")
     ap.add_argument("--mes", default="2026-09", help="competência AAAA-MM (usada também para achar os arquivos do mês)")
-    ap.add_argument("--entrada", default=".", help="pasta com os arquivos brutos")
+    ap.add_argument("--entrada", default="input", help="pasta com os arquivos brutos (todos os de entrada ficam aqui)")
     ap.add_argument("--saida", default="data", help="pasta onde as tabelas serão gravadas")
     a = ap.parse_args(argv)
     contagem = executar(a.mes, Path(a.entrada), Path(a.saida))

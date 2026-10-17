@@ -4,6 +4,8 @@ Este arquivo separa três coisas: o que o financeiro **confirmou**, o que nós *
 
 **Fonte das regras confirmadas:** respostas no canal `#tarvo-financeiro` (16 e 17/10). As respostas aparecem postadas pelo perfil `@manuel.freitas` e assinadas "Helena, financeiro da Tarvo"; tratamos como o mesmo interlocutor. As decisões estão registradas como dado em `config/` (com quem aprovou e quando) e são lidas por `src/ingestao.py`.
 
+**Dados de entrada:** ficam todos em `input/`. Além dos 6 arquivos base, chegou depois o `06_orbe_ajustes_tardios_set2026.csv` (14 lançamentos da Orbe de 30/09). A ingestão lê qualquer arquivo no formato da Orbe do mesmo mês e o grava em `fato_orbe` com o `arquivo_origem` e o `lote` (`BASE` ou `TARDIO`), conferindo que cada ajuste aponta para uma linha existente, de valor oposto, mesma taxa e mesmo EC.
+
 ---
 
 ## 1. Regras confirmadas pelo financeiro
@@ -90,9 +92,10 @@ As oito premissas antigas (antecipação na comissão, truncamento da Orbe, vig�
 | P10 | **IOF das remessas** (R$ 21.242,79) é repasse, não despesa da Tarvo: o TED para a Ponte é (Valor R$ + IOF). O **IOF s/ operação de crédito** de R$ 48,21 (Meridiano, 26/09) vai para `4.3.01`. | O banco mostra os TEDs fechando com Valor R$ + IOF. | Se parte do IOF das remessas for custo da Tarvo, mudaria o resultado. |
 | P11 | **CNPJs com 13 dígitos** na planilha (Fluente, Campus Global) tiveram o zero à esquerda restaurado. | A planilha perdeu o zero (formato numérico). | Nota emitida com CNPJ errado. |
 | P12 | Os **PIX à Atlas** (R$ 249.301,77 em 2 repasses) entram em `2.1.01.001` como **repasse normal**. A pendência da Atlas é de **faturamento** (R7), não dos PIX. | A Helena disse que, sem contrato, a Atlas "não fatura, vira pendência, e o repasse continua normal" (R31). | Se fosse adiantamento, `1.1.03.003`. |
-| P13 | O **valor da divergência de remessa** é `Spread R$` realizado − spread contratado × Valor ME × PTAX (valor cheio), em `Decimal`, arredondado ao centavo por operação. | Usa o valor que a Ponte pagou, sem passar pelo `spread_pct` do relatório, que vem arredondado. | Pelo `spread_pct` a Mundo Aberto daria R$ 1.418,85 em vez de R$ 1.418,88 (3 centavos). |
+| P13 | Os **ajustes tardios da Orbe** (arquivo 06, todos com `data_movimento` 30/09) entram em **setembro**, pela data do movimento. | Foram datados 30/09 e o arquivo é de set/2026. Para a Ponte a Helena disse que o ajuste entra no mês em que aparece; aqui assumimos que são lançamentos de setembro que chegaram depois do relatório. | Se valerem em outubro, a comissão de setembro sobe R$ 3.304,39 e sai da de outubro. |
 | P14 | **Após 31/12/2026 a Casa do Estudante volta às taxas da planilha** (linha `TABELA (retomada)` em `dim_contrato_taxa`, vigente a partir de 2027-01-01). | A Helena só deu "setembro a dezembro". | Se a isenção continuar, a tabela precisa de uma nova condição em `config/condicoes_comerciais.csv`. |
 | P15 | **Fluente Idiomas: o Pix a 0,79% da planilha é pendência**, e é um achado a destacar no case. Os demais lojistas têm 0,89%. A Orbe cobrou 0,79% nas 8 vendas de Pix da Fluente, então não há divergência entre planilha e Orbe; calculamos a comissão pela planilha como está e abrimos pendência com as 8 transações, para o comercial (quem aprova taxa) confirmar. | Parece erro de digitação na planilha, e é o tipo de erro que o fechamento manual não percebe. Decisão do grupo em 17/10. | Se o contrato real for 0,89%, a Orbe cobrou 0,10 p.p. a menos nessas 8 vendas e a comissão de Pix da Fluente está subestimada. |
+| P16 | O **valor da divergência de remessa** é `Spread R$` realizado − spread contratado × Valor ME × PTAX (valor cheio), em `Decimal`, arredondado ao centavo por operação. | Usa o valor que a Ponte pagou, sem passar pelo `spread_pct` do relatório, que vem arredondado. | Pelo `spread_pct` a Mundo Aberto daria R$ 1.418,85 em vez de R$ 1.418,88 (3 centavos). |
 
 ### Detalhe da P9 (contribuição do Gabriel, commit `90d0d6b`; era a "P1" do arquivo dele) — superada pela R27, mantida como histórico
 
@@ -138,6 +141,8 @@ Estão redigidas, com exemplo, em [PERGUNTAS_FINANCEIRO.md](PERGUNTAS_FINANCEIRO
 4. Razão social para a nota (a planilha tem nomes curtos).
 5. CNPJs com zero à esquerda restaurado.
 6. Retenção de ISS na nota de remessa.
+7. **Ajustes tardios da Orbe (arquivo 06)**: os estornos, as reversões de antecipação e a venda da Kiwi de 30/09 entram em setembro ou em outubro (P13)? Efeito: R$ 3.304,39 na comissão de checkout e nas notas.
+8. **Reversões de antecipação tardias** (R$ 121.742,45, Oxford e Maple): a Orbe desconta isso dos TEDs de outubro? As antecipações originais, pagas em D+1, já estavam nos TEDs de setembro?
 
 Decisões do grupo, que não são perguntas ao financeiro: o critério do alerta de antecipação (R32) e se a Atlas sai com comissão zerada e pendência ou fora do arquivo (R31).
 
@@ -147,10 +152,11 @@ Decisões do grupo, que não são perguntas ao financeiro: o critério do alerta
 
 Números do notebook `analise_setembro.ipynb` (prévias; o financeiro disse que não valida números, quem fecha somos nós):
 
-- **Checkout**: R$ 207.045,23 de comissão pela taxa contratada, em 20 lojistas com nota. **Casa do Estudante** fica com comissão de **−R$ 5,50** (só o estorno de uma venda de agosto), então **não emite nota** e vira pendência (R10).
+- **Dados tardios não trouxeram o dinheiro que faltava.** O arquivo 06 só muda o que a Orbe *reporta*: −R$ 142.565,06 no líquido (10 estornos −R$ 26.127,80, 3 reversões de antecipação −R$ 121.742,45 e uma venda da Kiwi +R$ 5.305,19). Os extratos do Aurora e do Meridiano são idênticos aos de antes. O reportado que ainda não entrou caiu de R$ 3.707.101,91 para R$ 3.564.536,85 porque a promessa diminuiu, e não porque entrou dinheiro. Os TEDs de setembro equivalem a 49,95% do reportado, mas incluem R$ 2,3 mi de parcelas de vendas de meses anteriores: do que a Orbe reportou *para setembro*, entraram só cerca de R$ 1,26 mi (débito, Pix e antecipações); o resto (R$ 5,85 mi) é crédito em parcelas.
+- **Checkout** (já com os ajustes tardios, −R$ 3.304,39 na comissão): R$ 203.740,84 pela taxa contratada, em 20 lojistas com nota. **Casa do Estudante** fica com comissão de **−R$ 5,50** (só o estorno de uma venda de agosto), então **não emite nota** e vira pendência (R10).
 - **Divergências de contrato de checkout** (para `divergencias_taxa.csv`): R$ 1.576,23 em 92 linhas (Rota Global R$ 1.546,28; Bridge R$ 29,95). A **Casa não entra aqui** (R28): são 118 linhas (R$ 15.397,42 por bruto × taxa) tratadas como devolução ao lojista, no valor cobrado de R$ 15.396,77. Os números de checkout foram conferidos por recálculo independente a partir dos arquivos brutos.
 - **Remessa**: R$ 39.543,45 em **uma nota** para a Ponte (232 operações únicas; 4 spreads negativos fora).
-- **Divergências de remessa** (valor cheio, a contestar): Mundo Aberto R$ 1.418,88 em 23 operações (P13); spreads negativos R$ 3.565,98 em 4 operações.
+- **Divergências de remessa** (valor cheio, a contestar): Mundo Aberto R$ 1.418,88 em 23 operações (P16); spreads negativos R$ 3.565,98 em 4 operações.
 - **Atlas retida**: 57 linhas, que o fechamento de outubro precisa puxar.
 - **Remessa fecha com o banco**: cada um dos 21 TEDs para a Ponte é a soma de (Valor R$ + IOF) das operações do dia, e o PIX de cada lojista é a soma das suas operações (13 de 14 exatos). A exceção é o PIX de R$ 18.240,00 (R19).
 - **Checkout não fecha com o banco**, e o financeiro disse que não é preciso neste fechamento (R24).

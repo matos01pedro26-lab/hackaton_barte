@@ -4,14 +4,14 @@ Fecha a linha de **remessa** (Ponte Câmbio): comissão por lojista, divergênci
 
 ## Como rodar
 
-Da raiz do repositório, depois da ingestão (`python -m src.ingestao --mes 2026-09 --entrada . --saida data`):
+Da raiz do repositório, depois da ingestão (`python -m src.ingestao --mes 2026-09`, que lê os arquivos brutos de `input/` e grava `data/`):
 
 ```
 python -m src.remessa --mes 2026-09 --dados data --saida saida/parcial
 python -m unittest discover -s tests -t .
 ```
 
-Só biblioteca padrão do Python (3.10 ou mais). Para outro mês, troque `--mes` e use os arquivos novos no mesmo formato: nada no código muda.
+Só biblioteca padrão do Python (3.10 ou mais). Para outro mês, coloque os arquivos novos (mesmo formato) em `input/`, troque `--mes` e rode de novo: nada no código muda.
 
 ## O que lê e o que grava
 
