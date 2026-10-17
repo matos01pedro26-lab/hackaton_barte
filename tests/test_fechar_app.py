@@ -59,14 +59,30 @@ class ComandoUnico(unittest.TestCase):
         self.assertEqual(fechar.brl("-5.5"), "-R$ 5,50")
 
 
+# Tipo que o navegador declara para cada extensão (no Windows, .eml vai como message/rfc822)
+TIPO_DO_NAVEGADOR = {".csv": "text/csv", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                     ".eml": "message/rfc822", ".ofx": "application/x-ofx"}
+
+
 def multipart(campos: dict[str, str], arquivos: list[tuple[str, bytes]]) -> tuple[bytes, str]:
     f = "----fronteiraDeTeste"
     corpo = b""
     for k, v in campos.items():
         corpo += f'--{f}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode()
     for nome, dados in arquivos:
-        corpo += f'--{f}\r\nContent-Disposition: form-data; name="arquivo"; filename="{nome}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode() + dados + b"\r\n"
+        tipo = TIPO_DO_NAVEGADOR.get(Path(nome).suffix.lower(), "application/octet-stream")
+        corpo += f'--{f}\r\nContent-Disposition: form-data; name="arquivo"; filename="{nome}"\r\nContent-Type: {tipo}\r\n\r\n'.encode() + dados + b"\r\n"
     return corpo + f"--{f}--\r\n".encode(), f"multipart/form-data; boundary={f}"
+
+
+class Upload(unittest.TestCase):
+    def test_arquivos_do_case_chegam_byte_a_byte_com_o_tipo_do_navegador(self):
+        # O .eml da Ponte chegava vazio: o navegador o declara message/rfc822 e o parser o tratava como mensagem aninhada.
+        enviados = [(p.name, p.read_bytes()) for p in sorted(INPUT.glob("*")) if p.is_file()]
+        corpo, tipo = multipart({"mes": "2026-09"}, enviados)
+        campos, recebidos = app.ler_multipart(tipo, corpo)
+        self.assertEqual(campos, {"mes": "2026-09"})
+        self.assertEqual(recebidos, enviados)
 
 
 class Tela(unittest.TestCase):
