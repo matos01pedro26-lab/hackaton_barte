@@ -64,7 +64,7 @@ class SetembroArquivado(unittest.TestCase):
 
     def test_pendencias_abertas_levam_o_mes_de_origem(self):
         abertas = ler(self.hist / "2026-09" / "pendencias_abertas.csv")
-        self.assertEqual(len(abertas), 28)
+        self.assertEqual(len(abertas), len(ler(self.tmp / "saida" / "pendencias.csv")))
         self.assertEqual({p["mes_origem"] for p in abertas}, {"2026-09"})
 
     def test_mes_fechado_nao_reabre(self):
@@ -110,7 +110,8 @@ class SetembroArquivado(unittest.TestCase):
         self.assertIs(classificar(o, "2026-10", CFG).classe, Classe.FORA_COMPETENCIA)   # sem histórico: continua pendência
 
     def test_outubro_herda_as_pendencias_abertas_menos_as_resolvidas(self):
-        self.assertEqual(len(historico.pendencias_herdadas("2026-10", CONFIG, self.hist)), 28)
+        total = len(ler(self.tmp / "saida" / "pendencias.csv"))
+        self.assertEqual(len(historico.pendencias_herdadas("2026-10", CONFIG, self.hist)), total)
         self.assertEqual(historico.pendencias_herdadas("2026-09", CONFIG, self.hist), [])
         config = self.tmp / "config_resolvida"
         config.mkdir()
@@ -118,7 +119,7 @@ class SetembroArquivado(unittest.TestCase):
                [{"id_saida": "PEN-BCO-2026-09-PIX_SEM_IDENTIFICACAO-L50", "resolvido_em": "2026-10-05",
                  "decisao": "identificado", "quem_decidiu": "Helena"}])
         herdadas = historico.pendencias_herdadas("2026-10", config, self.hist)
-        self.assertEqual(len(herdadas), 27)
+        self.assertEqual(len(herdadas), total - 1)
         self.assertNotIn("PEN-BCO-2026-09-PIX_SEM_IDENTIFICACAO-L50", {p["id_saida"] for p in herdadas})
 
 

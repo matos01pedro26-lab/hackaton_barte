@@ -1,7 +1,7 @@
 {
   "mes": "2026-09",
-  "fechado_em": "2026-10-17T16:16:45",
-  "commit": "2897c77",
+  "fechado_em": "2026-10-17T16:30:35",
+  "commit": "7bb5d00",
   "arquivos_de_entrada": [
     {
       "fonte": "orbe",
@@ -58,9 +58,9 @@
     "notas_qtd": 21,
     "notas_valor": "243284.29",
     "lancamentos_qtd": 184,
-    "pendencias_qtd": 28,
-    "rastro_linhas": 5226
+    "pendencias_qtd": 23,
+    "rastro_linhas": 5214
   },
-  "pendencias_abertas": 28,
+  "pendencias_abertas": 23,
   "anteriores": []
 }

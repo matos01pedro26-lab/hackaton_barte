@@ -48,7 +48,7 @@ python -m src.fechar --mes 2026-10 --entrada <pasta com os arquivos de outubro>
 
 1. Ponha os arquivos do mês numa pasta, com os mesmos prefixos (`01_orbe…`, `02_tabela_taxas…`, `03_email_ponte…`, `04_plano_de_contas…`, `05a_…aurora…`, `05b_…meridiano…`). Os ajustes tardios da Orbe (`06_orbe_…`) são opcionais.
 2. Rode o comando. Ele para com aviso, sem gravar nada, se faltar arquivo, se as datas não forem do mês pedido, se uma transação da Orbe já tiver sido faturada num mês fechado ou se o validador não fechar.
-3. Se tudo passar, o mês é **arquivado em `fechamentos/AAAA-MM/`** e não reabre (P20). Commite essa pasta: é o histórico que o mês seguinte consulta.
+3. Se tudo passar, o mês é **arquivado em `fechamentos/AAAA-MM/`** e não reabre (P20). O mês fecha quando a Helena aprova (RC-12): enquanto ela revisa, rode com `--sem-arquivar` e arquive só depois da aprovação. Commite essa pasta: é o histórico que o mês seguinte consulta.
 4. O resumo lista as **pendências herdadas** dos meses anteriores. Quando quem decide resolver uma delas, registre uma linha em `config/pendencias_resolvidas.csv` (`id_saida;resolvido_em;decisao;quem_decidiu`), e ela deixa de ser herdada.
 
 | Pasta | O que guarda |
