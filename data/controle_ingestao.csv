@@ -1,7 +1,14 @@
 tipo;fonte;item;valor;detalhe
-ARQUIVO;orbe;arquivo;01_orbe_relatorio_comissoes_set2026.csv;encoding=utf-8
-ARQUIVO;orbe;sha256;fdbc2bad2dd38dde8bf3af9d5c1f21116f0eae8d71d6a5a16b0dfd82de3cc7ec;
-CONTAGEM;orbe;linhas_lidas;1943;
+ARQUIVO;orbe;arquivo;01_orbe_relatorio_comissoes_set2026.csv;"lote=BASE; encoding=utf-8"
+ARQUIVO;orbe;sha256;fdbc2bad2dd38dde8bf3af9d5c1f21116f0eae8d71d6a5a16b0dfd82de3cc7ec;01_orbe_relatorio_comissoes_set2026.csv
+CONTAGEM;orbe;linhas_lidas;1943;01_orbe_relatorio_comissoes_set2026.csv (lote BASE)
+ARQUIVO;orbe;arquivo;06_orbe_ajustes_tardios_set2026.csv;"lote=TARDIO; encoding=utf-8"
+ARQUIVO;orbe;sha256;b1cfd183945fb194e05cfbe9455ab364c31b676427e6653562f6821f57240292;06_orbe_ajustes_tardios_set2026.csv
+CONTAGEM;orbe;linhas_lidas;14;06_orbe_ajustes_tardios_set2026.csv (lote TARDIO)
+VERIFICACAO;orbe;ajustes_tardios_apontam_para_linha_existente;OK;14 linhas fora da base, todas com origem encontrada
+VERIFICACAO;orbe;ajustes_tardios_com_valor_oposto_mesma_taxa_e_mesmo_ec;OK;valor oposto, mesma taxa e mesmo EC da linha original
+VERIFICACAO;orbe;venda_estornada_ou_revertida_mais_de_uma_vez;OK;cada linha original é estornada ou revertida no máximo uma vez
+CONTAGEM;orbe;liquido_do_lote_TARDIO;-142565.06;"14 linhas; efeito no líquido reportado (ESTORNO=10, REVERSAO ANTECIPACAO=3, VENDA=1)"
 ARQUIVO;tabela_taxas;arquivo;02_tabela_taxas_contratadas.xlsx;"aba=Taxas vigentes; abas ignoradas=['ANTIGO 2025 - nao usar']"
 ARQUIVO;tabela_taxas;sha256;d0c7d2b13ac41c2a036a40362eb26c341666feef74d7199284742c255885dfc4;
 CONTAGEM;tabela_taxas;linhas_lidas;25;
@@ -54,7 +61,7 @@ VERIFICACAO;dim_ec;nenhum_ec_da_orbe_sem_mapeamento;OK;todos os ECs da Orbe est�
 CONTAGEM;dim_ec;ecs_confirmados_pelo_financeiro;3;1038867654, 1043300981, 1043396662
 VERIFICACAO;fato_orbe;linhas_com_cnpj_ou_retidas;OK;toda linha da Orbe tem CNPJ, exceto as da EC retida (Atlas)
 VERIFICACAO;fato_banco;ref_origem_unico;OK;
-VERIFICACAO;orbe;linhas_lidas_igual_gravadas;OK;"lidas=1943; gravadas=1943"
+VERIFICACAO;orbe;linhas_lidas_igual_gravadas;OK;"lidas=1957; gravadas=1957"
 VERIFICACAO;ponte;linhas_lidas_igual_gravadas;OK;"lidas=233; gravadas=233"
 VERIFICACAO;plano_contas;linhas_lidas_igual_gravadas;OK;"lidas=52; gravadas=52"
 VERIFICACAO;bancos;linhas_lidas_igual_gravadas;OK;"lidas=184; gravadas=184"

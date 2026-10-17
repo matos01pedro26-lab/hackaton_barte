@@ -4,6 +4,8 @@ Este arquivo separa três coisas: o que o financeiro **confirmou**, o que nós *
 
 **Fonte das regras confirmadas:** respostas no canal `#tarvo-financeiro` (16 e 17/10). As respostas aparecem postadas pelo perfil `@manuel.freitas` e assinadas "Helena, financeiro da Tarvo"; tratamos como o mesmo interlocutor. As decisões estão registradas como dado em `config/` (com quem aprovou e quando) e são lidas por `src/ingestao.py`.
 
+**Dados de entrada:** ficam todos em `input/`. Além dos 6 arquivos base, chegou depois o `06_orbe_ajustes_tardios_set2026.csv` (14 lançamentos da Orbe de 30/09). A ingestão lê qualquer arquivo no formato da Orbe do mesmo mês e o grava em `fato_orbe` com o `arquivo_origem` e o `lote` (`BASE` ou `TARDIO`), conferindo que cada ajuste aponta para uma linha existente, de valor oposto, mesma taxa e mesmo EC.
+
 ---
 
 ## 1. Regras confirmadas pelo financeiro
@@ -79,6 +81,7 @@ As oito premissas antigas (antecipação na comissão, truncamento da Orbe, vig�
 | P10 | **IOF das remessas** (R$ 21.242,79) é repasse, não despesa da Tarvo: o TED para a Ponte é (Valor R$ + IOF). O **IOF s/ operação de crédito** de R$ 48,21 (Meridiano, 26/09) vai para `4.3.01`. | O banco mostra os TEDs fechando com Valor R$ + IOF. | Se parte do IOF das remessas for custo da Tarvo, mudaria o resultado. |
 | P11 | **CNPJs com 13 dígitos** na planilha (Fluente, Campus Global) tiveram o zero à esquerda restaurado. | A planilha perdeu o zero (formato numérico). | Nota emitida com CNPJ errado. |
 | P12 | Os **PIX à Atlas** (R$ 249.301,77 em 2 repasses) entram em `2.1.01.001` e geram pendência. | Pagos sem contrato assinado. | Se for adiantamento, `1.1.03.003`. |
+| P13 | Os **ajustes tardios da Orbe** (arquivo 06, todos com `data_movimento` 30/09) entram em **setembro**, pela data do movimento. | Foram datados 30/09 e o arquivo é de set/2026. Para a Ponte a Helena disse que o ajuste entra no mês em que aparece; aqui assumimos que são lançamentos de setembro que chegaram depois do relatório. | Se valerem em outubro, a comissão de setembro sobe R$ 3.304,39 e sai da de outubro. |
 
 ### Detalhe da P9 (contribuição do Gabriel, commit `90d0d6b`; era a "P1" do arquivo dele)
 
@@ -122,6 +125,8 @@ Estão redigidas, com exemplo, em [PERGUNTAS_FINANCEIRO.md](PERGUNTAS_FINANCEIRO
 7. Razão social para a nota (a planilha tem nomes curtos).
 8. CNPJs com zero à esquerda restaurado.
 9. Retenção de ISS na nota de remessa.
+10. **Ajustes tardios da Orbe (arquivo 06)**: os estornos, as reversões de antecipação e a venda da Kiwi de 30/09 entram em setembro ou em outubro (P13)? Efeito: R$ 3.304,39 na comissão de checkout e nas notas.
+11. **Reversões de antecipação tardias** (R$ 121.742,45, Oxford e Maple): a Orbe desconta isso dos TEDs de outubro? As antecipações originais, pagas em D+1, já estavam nos TEDs de setembro?
 
 ---
 
@@ -129,7 +134,8 @@ Estão redigidas, com exemplo, em [PERGUNTAS_FINANCEIRO.md](PERGUNTAS_FINANCEIRO
 
 Números do notebook `analise_setembro.ipynb` (prévias; o financeiro disse que não valida números, quem fecha somos nós):
 
-- **Checkout**: R$ 207.045,23 de comissão pela taxa contratada, em 20 lojistas com nota. **Casa do Estudante** fica com comissão de **−R$ 5,50** (só o estorno de uma venda de agosto), então **não emite nota** e vira pendência (R10).
+- **Dados tardios não trouxeram o dinheiro que faltava.** O arquivo 06 só muda o que a Orbe *reporta*: −R$ 142.565,06 no líquido (10 estornos −R$ 26.127,80, 3 reversões de antecipação −R$ 121.742,45 e uma venda da Kiwi +R$ 5.305,19). Os extratos do Aurora e do Meridiano são idênticos aos de antes. O reportado que ainda não entrou caiu de R$ 3.707.101,91 para R$ 3.564.536,85 porque a promessa diminuiu, e não porque entrou dinheiro. Os TEDs de setembro equivalem a 49,95% do reportado, mas incluem R$ 2,3 mi de parcelas de vendas de meses anteriores: do que a Orbe reportou *para setembro*, entraram só cerca de R$ 1,26 mi (débito, Pix e antecipações); o resto (R$ 5,85 mi) é crédito em parcelas.
+- **Checkout** (já com os ajustes tardios, −R$ 3.304,39 na comissão): R$ 203.740,84 pela taxa contratada, em 20 lojistas com nota. **Casa do Estudante** fica com comissão de **−R$ 5,50** (só o estorno de uma venda de agosto), então **não emite nota** e vira pendência (R10).
 - **Divergências de checkout**: R$ 16.973,65 em 210 linhas (Casa R$ 15.397,42; Rota Global R$ 1.546,28; Bridge R$ 29,95).
 - **Remessa**: R$ 39.543,45 em **uma nota** para a Ponte (232 operações únicas; 4 spreads negativos fora).
 - **Divergências de remessa** (valor cheio, a contestar): Mundo Aberto R$ 1.418,85 em 23 operações; spreads negativos R$ 3.565,98 em 4 operações.
