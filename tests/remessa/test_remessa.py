@@ -63,6 +63,25 @@ class Classificacao(unittest.TestCase):
     def test_liquidacao_em_outubro_vale_pela_contratacao(self):
         self.assertIs(classificar(op(data="2026-09-30"), "2026-09", CFG).classe, Classe.NORMAL)
 
+    def test_ajuste_de_setembro_rodando_em_outubro_entra_no_mes_em_que_aparece(self):
+        """O ajuste vem no relatório de outubro com data de contratação de 28/09: não é fora de competência."""
+        c = classificar(op(data="2026-09-28", spread="-50", obs="AJUSTE REF PC-0926-0042"), "2026-10", CFG)
+        self.assertIs(c.classe, Classe.AJUSTE)
+        self.assertEqual(c.op_original, "PC-0926-0042")
+
+    def test_operacao_normal_de_setembro_rodando_em_outubro_continua_fora(self):
+        """Só o ajuste atravessa o mês; uma operação normal de 28/09 no relatório de outubro fica de fora."""
+        self.assertIs(classificar(op(data="2026-09-28"), "2026-10", CFG).classe, Classe.FORA_COMPETENCIA)
+
+    def test_ajuste_de_setembro_em_outubro_abate_a_participacao_do_mes(self):
+        normal = classificar(op(num="PC-1026-0001", data="2026-10-05", spread="100"), "2026-10", CFG)
+        ajuste = classificar(op(num="PC-1026-0002", data="2026-09-28", spread="-50", obs="AJUSTE REF PC-0926-0042"),
+                             "2026-10", CFG)
+        linhas, rastro, _ = calcular_comissoes([normal, ajuste], {}, CFG, "2026-10")
+        self.assertEqual(linhas[0]["comissao_brl"], D("25.00"))            # 50,00 - 25,00
+        self.assertEqual(sum(r["valor"] for r in rastro), D("25.00"))
+        self.assertEqual({r["ref_original"] for r in rastro} - {""}, {"PC-0926-0042"})
+
 
 class Comissao(unittest.TestCase):
     def test_metade_do_spread_arredondada_por_operacao(self):
