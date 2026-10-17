@@ -211,7 +211,7 @@ def executar(mes: str, dados: Path, saida: Path | None) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Classifica os lançamentos dos extratos no plano de contas.")
-    ap.add_argument("--mes", default="2026-09")
+    ap.add_argument("--mes", required=True)
     ap.add_argument("--dados", default="data", help="pasta com as tabelas da ingestão")
     ap.add_argument("--saida", default="saida", help="pasta onde gravar lancamentos_classificados.csv")
     a = ap.parse_args(argv)

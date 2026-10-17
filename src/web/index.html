@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fechamento Tarvo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#fefefe; --bg2:#f9f9f9; --bg3:#efefef; --fg:#171717; --fg2:#404040; --fg3:#737373;
+  --ink:#030202; --ink-fg:#fefefe; --brand:#df285d; --brand-soft:#fbcad3; --brand-tint:#fdf0f3;
+  --stroke:#efefef; --stroke2:#d4d4d4; --green:#169e72; --green-soft:#d2fff1; --blue:#00a5e2; --blue-soft:#e1f7ff;
+  --orange:#ec9732; --orange-soft:#fff0db; --purple:#7239d6; --purple-soft:#e8e0f7;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  color-scheme:dark;
+  --bg:#0e0c0c; --bg2:#171515; --bg3:#221f1f; --fg:#f3f1f1; --fg2:#cfcaca; --fg3:#9a9393;
+  --ink:#f3f1f1; --ink-fg:#0e0c0c; --brand:#f0507f; --brand-soft:#5a1d2f; --brand-tint:#2a151b;
+  --stroke:#2a2626; --stroke2:#3d3838; --green:#3cc996; --green-soft:#12362a; --blue:#3cc2f2; --blue-soft:#0f2e3b;
+  --orange:#f2ab55; --orange-soft:#3a2a14; --purple:#a07cf0; --purple-soft:#2a2040;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px 64px}
+header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+.logo{font-weight:800;letter-spacing:-.02em;font-size:18px}.logo b{color:var(--brand)}
+.pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:12px;font-weight:600;background:var(--bg3);color:var(--fg2)}
+.pill.brand{background:var(--brand-tint);color:var(--brand)}.pill.ok{background:var(--green-soft);color:var(--green)}
+.pill.bad{background:var(--brand-soft);color:var(--brand)}.pill.warn{background:var(--orange-soft);color:var(--orange)}
+.hero h1{font-size:clamp(32px,5vw,52px);line-height:1.05;letter-spacing:-.035em;font-weight:900;margin:14px 0 12px}
+.hero h1 em{font-style:normal;color:var(--brand)}
+.lede{font-size:18px;color:var(--fg2);max-width:720px;margin:0 0 8px}
+.card{background:var(--bg);border:1px solid var(--stroke);border-radius:20px;padding:22px 24px;margin:18px 0}
+.card.alt{background:var(--bg2)}
+.sec-head{display:flex;align-items:baseline;gap:12px;margin:40px 0 4px}
+.sec-head h2{font-size:24px;letter-spacing:-.02em;font-weight:800;margin:0}
+.sec-head span{color:var(--fg3);font-size:14px}
+h3{margin:0 0 10px;font-size:16px}
+.drop{border:2px dashed var(--stroke2);border-radius:16px;padding:26px;text-align:center;color:var(--fg2);cursor:pointer;transition:.15s}
+.drop:hover,.drop.on{border-color:var(--brand);background:var(--brand-tint)}
+.drop strong{display:block;font-size:16px;color:var(--fg);margin-bottom:2px}
+.fontes{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:8px;margin:16px 0 0;padding:0;list-style:none}
+.fontes li{display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:12px;background:var(--bg2);font-size:13.5px}
+.fontes .dot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--bg3);color:var(--fg3);flex:none}
+.fontes li.ok .dot{background:var(--green-soft);color:var(--green)}
+.fontes small{color:var(--fg3);display:block;font-size:12px;word-break:break-all}
+.linha{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:18px}
+label{font-size:13px;color:var(--fg3);display:block;margin-bottom:4px;font-weight:600}
+input[type=month],input[type=text]{font:inherit;padding:10px 12px;border:1px solid var(--stroke2);border-radius:12px;background:var(--bg);color:var(--fg);width:230px}
+button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:12px 22px;cursor:pointer;background:var(--ink);color:var(--ink-fg)}
+button.brand{background:var(--brand);color:#fff}button.ghost{background:var(--bg3);color:var(--fg)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.msg{margin-top:16px;padding:14px 16px;border-radius:14px;background:var(--brand-tint);color:var(--fg);display:none}
+.msg.on{display:block}.msg b{color:var(--brand)}.msg ul{margin:8px 0 0 18px;padding:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin:18px 0}
+.kpi{border:1px solid var(--stroke);border-radius:18px;padding:16px 18px;background:var(--bg)}
+.kpi .v{font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:2px}.kpi .l{font-size:12.5px;color:var(--fg3);font-weight:600}
+.kpi .s{font-size:12.5px;color:var(--fg3)}
+.kpi.hot{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}.kpi.hot .l,.kpi.hot .s{color:inherit;opacity:.7}
+.kpi.hot .v{color:var(--brand)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.baixar{display:flex;gap:8px;flex-wrap:wrap}
+.baixar a{text-decoration:none;font-size:13px;font-weight:600;padding:7px 13px;border-radius:999px;background:var(--bg3);color:var(--fg)}
+.baixar a:hover{background:var(--brand-tint);color:var(--brand)}.baixar a.todos{background:var(--ink);color:var(--ink-fg)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--fg3);font-size:12px;font-weight:700;padding:8px 10px;border-bottom:1px solid var(--stroke2)}
+td{padding:9px 10px;border-bottom:1px solid var(--stroke);vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--brand-tint)}
+.neg{color:var(--brand)}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--fg2);margin:6px 0 10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+svg text{font-family:var(--font);fill:var(--fg2);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+details{margin-top:10px}summary{cursor:pointer;color:var(--fg2);font-weight:600}
+pre{background:var(--bg2);border-radius:12px;padding:12px;overflow:auto;font-size:12px;white-space:pre-wrap}
+dialog{border:0;border-radius:20px;padding:0;max-width:760px;width:calc(100% - 32px);background:var(--bg);color:var(--fg);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog .in{padding:22px 24px;max-height:80vh;overflow:auto}
+td.nw{white-space:nowrap}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:g .7s linear infinite;vertical-align:-2px;margin-right:8px}
+@keyframes g{to{transform:rotate(360deg)}}
+.vazio{color:var(--fg3);padding:14px 0}
+footer{margin-top:48px;color:var(--fg3);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo">Fechamento <b>Tarvo</b></div><span class="pill brand">T-800</span></header>
+
+<section class="hero">
+  <span class="pill">roda neste computador · sem chave de API</span>
+  <h1>Feche o mês <em>em um clique</em> e veja de onde sai cada número.</h1>
+  <p class="lede">Entregue os arquivos do mês. A solução calcula as comissões de checkout e de remessa, as divergências de taxa, as notas a emitir e a classificação dos extratos, e gera os seis arquivos de saída. O que exige uma pessoa vira pendência, com o motivo e quem decide.</p>
+</section>
+
+<section class="card" id="entrada">
+  <h3>1 · Arquivos do mês</h3>
+  <div class="drop" id="drop" tabindex="0">
+    <strong>Arraste os arquivos aqui ou clique para escolher</strong>
+    Todos de uma vez: relatório da Orbe, tabela de taxas, e-mail da Ponte, plano de contas e os dois extratos (mais os ajustes tardios da Orbe, se houver).
+  </div>
+  <input type="file" id="arquivos" multiple hidden>
+  <ul class="fontes" id="fontes"></ul>
+  <div class="linha">
+    <div><label for="mes">Competência (AAAA-MM)</label><input type="month" id="mes" placeholder="2026-09"></div>
+    <button class="brand" id="fechar" disabled>Fechar o mês</button>
+    <button class="ghost" id="exemplo">Usar os arquivos do case</button>
+  </div>
+  <div class="msg" id="msg"></div>
+</section>
+
+<div id="resultado" hidden>
+  <div class="card alt bar" id="topo"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="sec-head"><h2>Comissão por lojista</h2><span>clique numa linha para ver as linhas de origem</span></div>
+  <div class="card"><div class="legend"><span><i style="background:var(--brand)"></i>Checkout</span><span><i style="background:var(--blue)"></i>Remessa</span></div>
+    <div id="g-comissao"></div>
+    <details><summary>Ver tabela</summary><table id="t-comissao"></table></details></div>
+
+  <div class="sec-head"><h2>Divergências de taxa</h2><span>taxa aplicada diferente da contratada</span></div>
+  <div class="card"><div class="legend"><span><i style="background:var(--brand)"></i>Cobrado a mais do lojista</span><span><i style="background:var(--green)"></i>Cobrado a menos</span></div>
+    <div id="g-div"></div></div>
+
+  <div class="sec-head"><h2>Pendências</h2><span>cada uma com motivo e quem decide</span></div>
+  <div class="card"><table id="t-pend-tipo"></table>
+    <details><summary>Ver todas as pendências</summary><table id="t-pend"></table></details></div>
+
+  <div>
+    <div><div class="sec-head"><h2>Notas a emitir</h2></div><div class="card"><table id="t-notas"></table></div></div>
+    <div><div class="sec-head"><h2>Extratos classificados</h2></div><div class="card"><div id="g-contas"></div><div id="metodos" class="legend"></div></div></div>
+  </div>
+
+  <div class="sec-head"><h2>Como rodou</h2><span>cinco etapas, uma atrás da outra</span></div>
+  <div class="card" id="passos"></div>
+</div>
+
+<footer>Cada rodada grava em <code>execucoes/</code> e não altera o <code>saida/</code> entregue. As regras vêm do financeiro (<code>config/</code> e <code>HIPOTESES.md</code>); nenhuma etapa usa IA em execução.</footer>
+</div>
+
+<dialog id="modal"><div class="in" id="modal-corpo"></div></dialog>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const BRL = new Intl.NumberFormat("pt-BR", {style: "currency", currency: "BRL"});
+const brl = (v) => BRL.format(Number(v));
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const curto = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+let estado = null, escolhidos = [], execucao = null;
+
+async function iniciar() {
+  estado = await (await fetch("/api/estado")).json();
+  if (estado.mes_sugerido) $("#mes").value = estado.mes_sugerido;
+  desenharFontes();
+  if (new URLSearchParams(location.search).get("auto") === "exemplo") rodar("exemplo");   // atalho para demonstrar
+}
+
+function nomesAtuais() { return escolhidos.map((f) => f.name); }
+function desenharFontes() {
+  const nomes = nomesAtuais();
+  $("#fontes").innerHTML = estado.fontes.map((f) => {
+    const achado = nomes.find((n) => n.startsWith(f.prefixo) && n.endsWith(f.extensao));
+    return `<li class="${achado ? "ok" : ""}"><span class="dot">${achado ? "✓" : "·"}</span><span>${esc(f.nome)}<small>${achado ? esc(achado) : esc(f.prefixo + "*" + f.extensao)}</small></span></li>`;
+  }).join("");
+  const completos = estado.fontes.every((f) => nomes.some((n) => n.startsWith(f.prefixo) && n.endsWith(f.extensao)));
+  $("#fechar").disabled = !completos;
+  const extras = nomes.filter((n) => /^06_/.test(n));
+  if (extras.length) $("#fontes").insertAdjacentHTML("beforeend", `<li class="ok"><span class="dot">✓</span><span>Ajustes tardios da Orbe<small>${esc(extras.join(", "))}</small></span></li>`);
+}
+
+function adicionar(lista) {
+  for (const f of lista) if (!escolhidos.some((x) => x.name === f.name)) escolhidos.push(f);
+  const m = inferirMes(nomesAtuais());
+  if (m) $("#mes").value = m;
+  desenharFontes();
+}
+function inferirMes(nomes) {
+  const M = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"], cont = {};
+  for (const n of nomes) for (const m of n.toLowerCase().matchAll(/(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(20\d\d)/g)) {
+    const k = `${m[2]}-${String(M.indexOf(m[1]) + 1).padStart(2, "0")}`; cont[k] = (cont[k] || 0) + 1;
+  }
+  return Object.keys(cont).sort((a, b) => cont[b] - cont[a])[0] || null;
+}
+
+const drop = $("#drop"), seletor = $("#arquivos");
+drop.onclick = () => seletor.click();
+drop.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") seletor.click(); };
+seletor.onchange = () => adicionar([...seletor.files]);
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("on"); };
+drop.ondragleave = () => drop.classList.remove("on");
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("on"); adicionar([...e.dataTransfer.files]); };
+
+function aviso(html) { const m = $("#msg"); m.innerHTML = html; m.classList.toggle("on", !!html); }
+
+async function rodar(origem) {
+  const mes = $("#mes").value.trim();
+  const botoes = [$("#fechar"), $("#exemplo")];
+  botoes.forEach((b) => (b.disabled = true));
+  aviso(`<span class="spin"></span>Calculando… leva alguns segundos.`);
+  const fd = new FormData();
+  fd.append("mes", mes); fd.append("origem", origem);
+  if (origem === "upload") escolhidos.forEach((f) => fd.append("arquivo", f, f.name));
+  try {
+    const r = await fetch("/api/fechar", {method: "POST", body: fd});
+    const dado = await r.json();
+    if (!r.ok) {
+      let h = `<b>Não fechou.</b> ${esc(dado.erro)}`;
+      if (dado.faltam?.length) h += `<ul>${dado.faltam.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
+      if (dado.rejeitados?.length) h += `<div>Ignorados (nome fora do padrão): ${esc(dado.rejeitados.join(", "))}</div>`;
+      if (dado.detalhe) h += `<details><summary>detalhe técnico</summary><pre>${esc(dado.detalhe)}</pre></details>`;
+      aviso(h); return;
+    }
+    aviso(dado.rejeitados?.length ? `Ignorados (nome fora do padrão): ${esc(dado.rejeitados.join(", "))}` : "");
+    execucao = dado; mostrar(dado);
+    if (new URLSearchParams(location.search).get("abrir") === "rastro") abrirRastro(dado.comissoes.find((c) => c.linha_negocio === "REMESSA").id_saida);   // atalho para demonstrar
+  } catch (e) {
+    aviso(`<b>Não consegui falar com o servidor local.</b> Ele ainda está rodando no terminal? (${esc(e.message)})`);
+  } finally {
+    botoes.forEach((b) => (b.disabled = false)); desenharFontes();
+  }
+}
+$("#fechar").onclick = () => rodar("upload");
+$("#exemplo").onclick = () => rodar("exemplo");
+
+// ---------------------------------------------------------------- gráficos (SVG, sem biblioteca)
+function barras(el, itens, {cor, negCor, formato = brl}) {
+  if (!itens.length) { el.innerHTML = `<div class="vazio">Nada para mostrar.</div>`; return; }
+  const L = 280, W = 900, H = 26, max = Math.max(...itens.map((i) => Math.abs(i.v)), 1);
+  const temNeg = itens.some((i) => i.v < 0), zero = temNeg ? L + (W - L - 90) / 2 : L, escala = (temNeg ? (W - L - 90) / 2 : W - L - 90) / max;
+  const linhas = itens.map((i, k) => {
+    const y = k * H, w = Math.abs(i.v) * escala, x = i.v < 0 ? zero - w : zero, c = i.v < 0 ? (negCor || cor(i)) : cor(i);
+    const txt = formato(i.v), tx = i.v < 0 ? zero + 6 : x + w + 6, anc = "start";
+    return `<g ${i.id ? `data-id="${esc(i.id)}" style="cursor:pointer"` : ""}><text x="${L - 8}" y="${y + 17}" text-anchor="end">${esc(curto(i.rotulo, 42))}</text>
+      <rect x="${x}" y="${y + 5}" width="${Math.max(w, 1.5)}" height="${H - 10}" rx="5" fill="${c}"/>
+      <text x="${tx}" y="${y + 17}" text-anchor="${anc}">${txt}</text></g>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${itens.length * H + 4}" width="100%" role="img">${temNeg ? `<line x1="${zero}" x2="${zero}" y1="0" y2="${itens.length * H}" stroke="var(--stroke2)"/>` : ""}${linhas}</svg>`;
+}
+
+// ---------------------------------------------------------------- tela de resultado
+function mostrar(d) {
+  $("#resultado").hidden = false;
+  const k = d.kpis, dv = k.divergencias;
+  $("#topo").innerHTML = `<div><b>Fechamento ${esc(d.mes)}</b> <span class="pill ${d.validador.ok ? "ok" : "bad"}">${d.validador.ok ? "validador: tudo fecha" : "validador: há problemas"}</span>
+    <div class="s" style="color:var(--fg3);font-size:13px">${d.enviados.length} arquivos de entrada · rodada ${esc(d.id)}</div></div>
+    <div class="baixar">${d.arquivos.map((a) => `<a href="/baixar/${d.id}/${a.nome}" download>${a.nome}</a>`).join("")}<a class="todos" href="/baixar/${d.id}/saidas.zip" download>baixar os 6 (zip)</a></div>`;
+  $("#kpis").innerHTML = [
+    ["Comissão do mês", brl(k.comissao_total), `checkout ${brl(k.comissao_checkout)} · remessa ${brl(k.comissao_remessa)}`, true],
+    ["Notas a emitir", k.notas_qtd, brl(k.notas_valor)],
+    ["Divergências de taxa", k.divergencias_qtd, `checkout ${dv.CHECKOUT.qtd}: ${brl(dv.CHECKOUT.valor)} · remessa ${dv.REMESSA.qtd}: ${brl(dv.REMESSA.valor)}`],
+    ["Pendências", k.pendencias_qtd, "cada uma com quem decide"],
+    ["Lançamentos classificados", k.lancamentos_qtd, `${d.lancamentos_por_metodo.REGRA || 0} por regra`],
+    ["Linhas de rastro", k.rastro_linhas.toLocaleString("pt-BR"), "cada número aponta para a origem"],
+  ].map(([l, v, s, hot]) => `<div class="kpi ${hot ? "hot" : ""}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+
+  const com = [...d.comissoes].sort((a, b) => b.comissao_brl - a.comissao_brl);
+  barras($("#g-comissao"), com.map((c) => ({rotulo: `${curto(c.lojista, 26)}${c.linha_negocio === "REMESSA" ? " (remessa)" : ""}`, v: Number(c.comissao_brl), id: c.id_saida, linha: c.linha_negocio})),
+         {cor: (i) => (i.linha === "REMESSA" ? "var(--blue)" : "var(--brand)"), negCor: "var(--orange)"});
+  $("#g-comissao").querySelectorAll("g[data-id]").forEach((g) => (g.onclick = () => abrirRastro(g.dataset.id)));
+  $("#t-comissao").innerHTML = `<tr><th>Lojista</th><th>Linha</th><th class="n">Comissão</th></tr>` +
+    com.map((c) => `<tr class="click" data-id="${esc(c.id_saida)}"><td>${esc(c.lojista)}</td><td>${c.linha_negocio}</td><td class="n ${c.comissao_brl < 0 ? "neg" : ""}">${brl(c.comissao_brl)}</td></tr>`).join("");
+  $("#t-comissao").querySelectorAll("tr.click").forEach((tr) => (tr.onclick = () => abrirRastro(tr.dataset.id)));
+
+  const dvs = d.divergencias_por_lojista.map((x) => ({rotulo: `${curto(x.lojista, 26)} (${x.qtd})`, v: Number(x.valor), id: `${x.cnpj}|${x.linha_negocio}`}));
+  barras($("#g-div"), dvs, {cor: () => "var(--brand)", negCor: "var(--green)"});
+  $("#g-div").querySelectorAll("g[data-id]").forEach((g) => (g.onclick = () => abrirDivergencias(g.dataset.id)));
+
+  $("#t-pend-tipo").innerHTML = `<tr><th>Tipo</th><th class="n">Qtd</th><th class="n">Valor</th><th>Quem decide</th></tr>` +
+    d.pendencias_por_tipo.map((p) => `<tr><td>${esc(p.tipo)}</td><td class="n">${p.qtd}</td><td class="n ${p.valor < 0 ? "neg" : ""}">${brl(p.valor)}</td><td>${esc(p.quem_decide)}</td></tr>`).join("");
+  $("#t-pend").innerHTML = `<tr><th>Tipo</th><th>Origem</th><th class="n">Valor</th><th>Motivo</th><th>Decide</th></tr>` +
+    d.pendencias.map((p) => `<tr class="click" data-id="${esc(p.id_saida)}"><td>${esc(p.tipo)}</td><td>${esc(curto(p.ref_origem, 40))}</td><td class="n">${brl(p.valor_brl)}</td><td>${esc(p.motivo)}</td><td>${esc(p.quem_decide)}</td></tr>`).join("");
+  $("#t-pend").querySelectorAll("tr.click").forEach((tr) => (tr.onclick = () => abrirRastro(tr.dataset.id)));
+
+  $("#t-notas").innerHTML = `<tr><th>Tomador</th><th>Linha</th><th class="n">Valor</th></tr>` +
+    d.notas.map((n) => `<tr class="click" data-id="${esc(n.id_saida)}"><td>${esc(n.tomador)}</td><td>${n.linha_negocio}</td><td class="n">${brl(n.valor_brl)}</td></tr>`).join("");
+  $("#t-notas").querySelectorAll("tr.click").forEach((tr) => (tr.onclick = () => abrirRastro(tr.dataset.id)));
+
+  barras($("#g-contas"), d.lancamentos_por_conta.slice(0, 12).map((c) => ({rotulo: `${c.conta} ${curto(c.descricao, 30)}`, v: c.qtd})),
+         {cor: () => "var(--purple)", formato: (v) => `${v} lançamento${v === 1 ? "" : "s"}`});
+  $("#metodos").innerHTML = Object.entries(d.lancamentos_por_metodo).map(([m, n]) => `<span><i style="background:var(--purple)"></i>${m}: ${n}</span>`).join("");
+
+  $("#passos").innerHTML = d.passos.map((p) => `<details><summary>${esc(p.nome)} <span class="pill ok">${p.segundos.toFixed(2)} s</span></summary><pre>${esc(p.log || "(sem mensagens)")}</pre></details>`).join("");
+  $("#resultado").scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+async function abrirRastro(id) {
+  const r = await (await fetch(`/api/rastro?e=${encodeURIComponent(execucao.id)}&id=${encodeURIComponent(id)}`)).json();
+  const linhas = r.linhas.map((l) => `<tr><td class="nw">${esc(l.ref_origem)}</td><td title="${esc(l.arquivo_origem)}">${esc(curto(l.arquivo_origem.split("::").pop(), 34))}</td><td class="n">${brl(l.valor)}</td></tr>`).join("");
+  $("#modal-corpo").innerHTML = `<h3>${esc(r.id_saida)}</h3>
+    <p>${r.reportado === null ? "Número não encontrado nas saídas." : `Número reportado em <b>${esc(r.arquivo)}</b>: <b>${brl(r.reportado)}</b>`}<br>
+    Soma das <b>${r.total_linhas}</b> linhas de origem: <b>${brl(r.soma_rastro)}</b> <span class="pill ${r.fecha ? "ok" : "bad"}">${r.fecha ? "fecha" : "não fecha"}</span></p>
+    <table><tr><th>Linha de origem</th><th>Arquivo</th><th class="n">Valor</th></tr>${linhas}</table>
+    ${r.total_linhas > 1000 ? "<p class='vazio'>Mostrando as 1.000 primeiras.</p>" : ""}
+    <p style="text-align:right"><button class="ghost" onclick="$('#modal').close()">Fechar</button></p>`;
+  $("#modal").showModal();
+}
+async function abrirDivergencias(chave) {
+  const [cnpj, linha] = chave.split("|");
+  const r = await (await fetch(`/api/divergencias?e=${encodeURIComponent(execucao.id)}&cnpj=${cnpj}&linha=${linha}`)).json();
+  const linhas = r.map((l) => `<tr class="click" onclick="$('#modal').close();abrirRastro('${esc(l.id_saida)}')"><td>${esc(l.ref_origem)}</td><td class="n">${l.taxa_contratada_pct}%</td><td class="n">${l.taxa_aplicada_pct}%</td><td class="n ${l.diferenca_brl < 0 ? "neg" : ""}">${brl(l.diferenca_brl)}</td></tr>`).join("");
+  $("#modal-corpo").innerHTML = `<h3>${r.length} divergências · ${linha.toLowerCase()}</h3>
+    <table><tr><th>Origem</th><th class="n">Contratada</th><th class="n">Aplicada</th><th class="n">Diferença</th></tr>${linhas}</table>
+    <p style="text-align:right"><button class="ghost" onclick="$('#modal').close()">Fechar</button></p>`;
+  $("#modal").showModal();
+}
+iniciar();
+</script>
+</body>
+</html>

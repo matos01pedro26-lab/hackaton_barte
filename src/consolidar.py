@@ -275,7 +275,7 @@ def executar(mes: str, dados: Path, checkout: Path, parcial: Path, config: Path,
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Consolida as saídas no formato do edital.")
-    ap.add_argument("--mes", default="2026-09")
+    ap.add_argument("--mes", required=True)
     ap.add_argument("--dados", default="data")
     ap.add_argument("--checkout", default="saida/checkouts")
     ap.add_argument("--parcial", default="saida/parcial")

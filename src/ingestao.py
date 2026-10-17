@@ -873,7 +873,7 @@ def executar(mes: str, entrada: Path, saida: Path) -> dict[str, int]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Ingestão do data pack da Tarvo em tabelas padronizadas (CSV).")
-    ap.add_argument("--mes", default="2026-09", help="competência AAAA-MM (usada também para achar os arquivos do mês)")
+    ap.add_argument("--mes", required=True, help="competência AAAA-MM (usada também para achar os arquivos do mês)")
     ap.add_argument("--entrada", default="input", help="pasta com os arquivos brutos (todos os de entrada ficam aqui)")
     ap.add_argument("--saida", default="data", help="pasta onde as tabelas serão gravadas")
     a = ap.parse_args(argv)
