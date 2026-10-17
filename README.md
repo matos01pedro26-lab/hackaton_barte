@@ -14,8 +14,10 @@ cd hackaton_barte
 ### Opção 1: um comando
 
 ```
-python -m src.fechar --mes 2026-09
+python -m src.fechar --mes 2026-09 --sem-arquivar
 ```
+
+Setembro **já está fechado e arquivado** em `fechamentos/2026-09/`, e mês fechado não reabre. Por isso a rodada de reprodução usa `--sem-arquivar`: ela refaz o cálculo e grava os seis arquivos em `saida/` sem mexer no arquivo do mês. Sem essa opção, o comando para com o aviso "2026-09 já está fechado" (veja "Fechar um mês novo", abaixo).
 
 Lê os arquivos do mês em `input/`, roda ingestão, checkout, remessa, consolidação e validador, grava os seis arquivos em `saida/` e imprime o resumo (comissão, notas, divergências, pendências). O mês é sempre informado, e nada no código está fixo em setembro. Para outro mês, ponha os arquivos novos (mesmo formato) numa pasta e aponte para ela: `python -m src.fechar --mes 2026-10 --entrada <pasta>`.
 
@@ -83,7 +85,10 @@ Regra primeiro (`src/classificacao.py`, `REGRAS`); IA só onde não há regra, c
 - `RAZÃO SOCIAL A CONFERIR`: as notas usam o nome do cadastro; a razão social não foi confirmada.
 - Não há nota para lojista com comissão zero ou negativa (Casa e Atlas): vira pendência.
 - Prazo de contestação da Ponte: a data nas pendências é calculada do e-mail (5 dias úteis, sem feriados) e **está a confirmar com a Helena**.
-- A taxa do Fluente (0,79% aplicado contra 0,89% contratado) está sinalizada para a Helena; nenhuma decisão foi tomada no lugar dela.
+- A taxa do Fluente (Pix a 0,79%, contra 0,89% dos demais lojistas) foi **confirmada pela Helena como condição negociada**: não é erro da planilha e não gera pendência.
+- Se faltar uma das seis fontes, o fechamento **não roda parcial**: para, sem gravar nada, e diz o que falta. A Helena prefere fechar o que não depende da fonte que faltou; ainda não fazemos isso.
+- As pendências de banco escritas à mão (`config/pendencias_bancos.csv`) valem só no mês da coluna `mes`. Em outro mês, o fechamento só aponta lançamentos sem regra; as demais pendências de banco do mês novo precisam ser escritas.
+- O que o mês fechado deixa em aberto (por exemplo a Atlas, retida até o comercial confirmar a taxa) é **herdado como pendência** pelo mês seguinte, mas o faturamento retroativo continua dependendo da decisão do comercial.
 
 ## Pendências
 
