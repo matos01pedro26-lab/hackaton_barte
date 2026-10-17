@@ -29,7 +29,8 @@ RAIZ = Path(__file__).resolve().parents[1]
 RAIZ_HIST = RAIZ / "fechamentos"
 SAIDAS = ["comissoes_por_lojista", "divergencias_taxa", "notas_a_emitir", "lancamentos_classificados", "pendencias", "rastro"]
 TABELAS = ["fato_orbe", "fato_ponte", "fato_banco", "dim_ec", "controle_ingestao"]
-COL_PENDENCIAS = ["mes_origem", "id_saida", "tipo", "ref_origem", "valor_brl", "motivo", "quem_decide"]
+COL_PENDENCIAS = ["mes_origem", "id_saida", "tipo", "ref_origem", "valor_brl", "motivo", "quem_decide",
+                  "prazo", "data_decisao", "valor_referencia_brl", "base_valor"]  # colunas extras de pendencias.csv
 MES = re.compile(r"^20\d\d-(0[1-9]|1[0-2])$")
 
 

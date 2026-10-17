@@ -17,3 +17,22 @@ Pedi uma análise crítica da parte do Pedro. A IA recalculou a comissão de che
 ## 4. Testar como a banca testaria, e achar o que o nosso próprio teste não via
 
 Pedi para saber se a solução rodava em outros meses. A IA fabricou um "outubro de teste" deslocando as datas de setembro e rodou o comando de verdade, e isso expôs quatro defeitos: o checkout calculava R$ 207 mil e chamava de outubro, sem avisar ninguém; as pendências de banco estavam presas a IDs de setembro e derrubavam o fechamento; o prazo da Ponte tinha a data de setembro fixa; e uma pendência minha ("nota não emitida") não tinha rastro. Corrigimos os quatro, com testes. Depois, na `main`, a mesma prática de clonar limpo e rodar o README achou que a mudança de um colega (arquivar o mês fechado) fazia o comando do README falhar para a banca, e que o pitch tinha ficado desatualizado depois de a Helena confirmar a Fluente como condição negociada.
+
+---
+
+# Momentos que importaram (Pedro, bancos e integração)
+
+Históricos completos: [`pedro_bancos_integracao_sessao_claude_code.jsonl`](pedro_bancos_integracao_sessao_claude_code.jsonl) (construção) e [`pedro_revisao_consulta_sessao_claude_code.jsonl`](pedro_revisao_consulta_sessao_claude_code.jsonl), com os subagentes revisores em [`pedro_revisao_consulta_subagentes/`](pedro_revisao_consulta_subagentes/). Só os e-mails pessoais foram removidos; o resto está sem edição.
+
+## 1. A IA anunciou uma mudança de número que não existia (erro da IA)
+
+Pedi para aplicar a resposta da Helena de que o Pix a 0,79% da Fluente é condição negociada, e a IA disse que a nota da Fluente cairia de R$ 7.316,07 para R$ 7.306,91. Antes de mexer no CSV, ela conferiu nos dados e viu que a nota já saía a 0,79% (a pendência de R$ 9,16 era só a diferença para 0,89%), então corrigiu o que tinha dito e eu aprovei só a mudança na pendência, sem alterar nenhum valor.
+
+## 2. Tratamos resposta colada no chat como regra oficial (a IA me levou para o lugar errado)
+
+Pedi para fechar as hipóteses e as regras de negócio com as respostas da Helena ao T-800, e a IA marcou como confirmadas respostas que estavam só no chat, fora do `duvidas_financeiro.csv`. A revisão com os agentes Bia, Caio e Helena apontou o problema; reabrimos as pendências da Fluente, dos juros da conta garantida e da razão social, e criei `config/registro_decisoes.csv`, onde só é CONFIRMADO o que tem resposta escrita no CSV.
+
+## 3. Desconfiei de 184 lançamentos todos "por regra"
+
+Estranhei que nenhum lançamento saía por IA ou para humano e pedi a origem das 26 regras de classificação. A IA mostrou que o caminho de IA nunca tinha sido ligado e que várias regras eram inferência dela, sem resposta do financeiro; pedi para separar o que era do financeiro, do time e da IA, e as suposições viraram as perguntas da rodada T-800.
+>>>>>>> Stashed changes

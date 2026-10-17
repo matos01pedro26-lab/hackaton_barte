@@ -106,6 +106,8 @@ class FechamentoSetembro(unittest.TestCase):
             "CONTESTACAO_ORBE-95927868000148": (Decimal("1546.28"), "Financeiro"),           # Rota Global (R9, R29)
             "DEVOLUCAO_CONDICAO-00520815000100-TODAS": (Decimal("15396.77"), "Financeiro"),  # Casa (R28)
             "EC_RETIDO-1076801732": (Decimal("262138.61"), "Comercial (Diego)"),                     # Atlas (R7)
+            # Fluente (P15): 0,79% na planilha; a resposta "condição negociada" não está no CSV, então segue pendente
+            "TAXA_A_CONFIRMAR-03229837000103-pix": (Decimal("9.16"), "Helena (financeiro)"),
         })
         for x in self.pendencias:  # ref_origem = transações da Orbe separadas por "|", como na remessa
             self.assertTrue(all(ref.startswith(("TX", "AN")) for ref in x["ref_origem"].split("|")), x["id_saida"])

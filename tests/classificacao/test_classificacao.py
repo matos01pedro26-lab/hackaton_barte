@@ -137,6 +137,14 @@ class SemRegra(ContasSinteticas):
         self.assertEqual((linhas[0]["metodo"], linhas[0]["conta_codigo"]), ("HUMANO", ""))
         self.assertEqual(len(sem), 1)
 
+    def test_decisor_pendente_limita_a_confianca_e_nao_muda_a_conta(self):
+        livre, _, _ = c.classificar([self._lancamento("PAGTO ISS SAO PAULO")], self.PLANO, regras=self.REGRA_ISS)
+        preso, _, _ = c.classificar([self._lancamento("PAGTO ISS SAO PAULO")], self.PLANO, regras=self.REGRA_ISS,
+                                    decisor_pendente={("AURORA", "L1")})
+        self.assertEqual(livre[0]["confianca"], D("0.90"))
+        self.assertEqual((preso[0]["conta_codigo"], preso[0]["confianca"]), ("2.1.03.003", D("0.70")))
+        self.assertIn("Decisor pendente", preso[0]["observacao"])
+
     def test_regra_vence_a_ia(self):
         linhas, _, _ = c.classificar([self._lancamento("PAGTO ISS SAO PAULO")], self.PLANO, regras=self.REGRA_ISS,
                                      sugestor=lambda l: ("1.1.01.001", 0.9))

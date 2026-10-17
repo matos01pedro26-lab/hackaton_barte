@@ -10,6 +10,7 @@ from pathlib import Path
 from src.remessa.comissao import calcular_comissoes
 from src.remessa.ids import id_comissao, id_divergencia, id_nota, id_pendencia
 from src.remessa.nota import montar_nota
+from src.remessa.pendencias import montar_pendencias
 from src.remessa.config import carregar_config
 from src.remessa.divergencia import calcular_diferencas, divergencias
 from src.remessa.leitura import Contrato, Operacao
@@ -81,6 +82,26 @@ class Classificacao(unittest.TestCase):
         self.assertEqual(linhas[0]["comissao_brl"], D("25.00"))            # 50,00 - 25,00
         self.assertEqual(sum(r["valor"] for r in rastro), D("25.00"))
         self.assertEqual({r["ref_original"] for r in rastro} - {""}, {"PC-0926-0042"})
+
+    def test_ajuste_com_data_de_agosto_entra_em_setembro_e_em_outubro(self):
+        """O ajuste vale no mês em que aparece no relatório, mesmo com contratação de dois meses antes."""
+        for mes in ("2026-09", "2026-10"):
+            c = classificar(op(data="2026-08-20", spread="-30", obs="AJUSTE REF PC-0826-0010"), mes, CFG)
+            self.assertIs(c.classe, Classe.AJUSTE, mes)
+            self.assertEqual(c.op_original, "PC-0826-0010")
+
+    def test_ajuste_com_padrao_quebrado_nao_e_descartado_em_silencio(self):
+        """Sem "REF PC-xxxx-nnnn" não dá para saber o que é ajustado: nem comissão, nem fora de competência; vira pendência."""
+        for obs, data in (("AJUSTE PC-0826-0010", "2026-08-20"), ("ajuste ref 0826-10", "2026-09-15"),
+                          ("AJUSTE REF PC-0826", "2026-08-20")):
+            c = classificar(op(num="PC-0926-0900", data=data, spread="-30", obs=obs), "2026-09", CFG)
+            self.assertIs(c.classe, Classe.AJUSTE_NAO_RECONHECIDO, obs)
+            linhas, _, _ = calcular_comissoes([c], {}, CFG, "2026-09")
+            self.assertEqual(sum((l["comissao_brl"] for l in linhas), D("0")), D("0"))
+            pend, rastro = montar_pendencias([c], [], [], [], {}, D("1"), "2026-09", CFG)
+            p = next(p for p in pend if p["tipo"] == "AJUSTE_NAO_RECONHECIDO")
+            self.assertEqual(p["ref_origem"], "PC-0926-0900")
+            self.assertEqual(sum(r["valor"] for r in rastro if r["id_saida"] == p["id_saida"]), p["valor_brl"])
 
 
 class Comissao(unittest.TestCase):

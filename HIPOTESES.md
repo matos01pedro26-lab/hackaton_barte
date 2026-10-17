@@ -15,15 +15,18 @@ Este arquivo separa o que o financeiro **confirmou**, o que o **time** decidiu (
 | FINANCEIRO | Dito de forma explícita e direta pela Helena. |
 | TIME | A Helena delegou ("o critério é de vocês", "escolham uma e escrevam o motivo") ou é decisão de desenho nossa. Falta o time ratificar. |
 | IA | Suposição da IA sem resposta que a sustente. Virou pergunta e **não vale como regra**. |
+| PREMISSA | Resposta escrita que ainda depende de **confirmação humana** para fechar uma pendência (Fluente, juros da conta garantida, razão social das notas e prazo da Ponte), ou escolha nossa sem fonte escrita. Vale para trabalhar, e a pendência continua aberta. |
+
+**Registro das decisões:** `config/registro_decisoes.csv`. Lá, `CONFIRMADO` só existe quando há resposta escrita em `duvidas_financeiro.csv`, com o número da resposta como fonte. O resto é `PREMISSA`, sem aprovador.
 
 ---
 
 ## 0. Resumo (contagem feita sobre as tabelas abaixo)
 
-- **35 regras consolidadas** no lugar de 51 itens R e P: 33 FINANCEIRO, 2 TIME e 0 IA. Das 33 FINANCEIRO, 7 têm uma parte que é escolha do time, e 3 têm uma parte que é critério nosso (RC-07, RC-23 e RC-29).
-- **Itens antigos (51)**: 39 FINANCEIRO, 10 TIME, 1 IA e 1 superada.
-- **Perguntas abertas: nenhuma.** A rodada 2 (N1 a N10) foi respondida em 17/10 e fechada na seção 3. O que sobra é premissa com dono, e não suposição.
-- **Respondidas no T-800:** juros da conta garantida (fora de setembro), IOF de R$ 48,21 (conta nossa), IOF das remessas (do cliente), razão social, CNPJ de 14 dígitos, retenção da Ponte (nenhuma), Fluente a 0,79%, isenção da Casa até 31/12, data da venda, PIX enviado a lojista, rendimento e seguro, contas de bancos, prazo da Ponte (premissa com risco, N1).
+- **35 regras consolidadas** no lugar de 51 itens R e P: 31 FINANCEIRO, 2 TIME e 2 PREMISSA (RC-32, Fluente, e RC-34, razão social).
+- **Itens antigos (51)**: 38 FINANCEIRO, 10 TIME, 1 PREMISSA (P15, Fluente), 1 IA (P14, Casa depois de 2026) e 1 superada.
+- **As duas rodadas da T-800 estão em `duvidas_financeiro.csv`, como respostas #39 e #40.** O que não depende de pendência passou a FINANCEIRO (período da Casa, data da venda, CNPJ com 14 dígitos, sem retenção na Ponte, IOF das remessas). Quatro itens seguem PREMISSA, com a pendência aberta até confirmação humana: Fluente (R$ 9,16), juros da conta garantida (referência, sem valor), razão social das notas e prazo da Ponte.
+- **DARFs L57, L86 e L87:** a retirada da pendência se sustenta no CSV (respostas 5, 8 e 17: os DARFs são de agosto e já estavam provisionados).
 ---
 
 ## 1. Regras de negócio consolidadas (35)
@@ -37,7 +40,7 @@ Este arquivo separa o que o financeiro **confirmou**, o que o **time** decidiu (
 | RC-04 | **Arredondamento** comum, linha por linha e depois soma; meio centavo para cima, também no negativo. Diferença de centavo por truncamento da Orbe **não** é divergência. | A Orbe trunca e a Tarvo não. A Helena não quer alarme de centavo, mas também não quer deixar passar diferença de verdade. | FINANCEIRO |  | R4 (1ª parte) | #7 | RN-07 |
 | RC-05 | **Divergência de checkout** = bruto × (taxa aplicada − contratada), **transação por transação**; o estorno de venda com taxa errada entra com valor negativo. | É o valor que o lojista pagou a mais e que se contesta. Listar por transação permite achar a origem de cada centavo. | FINANCEIRO |  | R5 | #7, #28 | RN-08, 09 |
 | RC-06 | Quando a contraparte **cobra diferente do contrato**, é divergência: contesta-se a Orbe ou a Ponte e o lojista é ressarcido. Vale para Rota Global (contrato não mudou), Bridge (aditivo de 2,19% desde 15/09), Mundo Aberto (1,20% desde julho) e para a Orbe cobrando **abaixo** do contrato (caso a caso). | O que decide é o contrato, não o aviso. O aviso atrasado é problema de processo nosso, mas não muda quem deve. | FINANCEIRO |  | R9, R29, R35 (e exemplos de R5 e R17) | #5, #14, #27 | RN-10, 26 |
-| RC-07 | **Casa do Estudante**: tarifa zerada de setembro a dezembro (MDR e antecipação; remessa normal), com período confirmado pela Helena (01/09 a 31/12/2026). O que a Orbe cobrou é **devolução nossa**, separada das divergências e fora da cobrança da Orbe, no valor descontado de fato (R$ 15.396,77). A isenção da antecipação vale pela **data da antecipação**. | É concessão do comercial, fora do contrato. A Orbe cobrou certo pelo que sabia, então quem abriu mão da receita arca com a devolução. | FINANCEIRO | IA: o que acontece depois de dezembro, volta à planilha em 2027 (N3). | R8, R28, R45, P2, P14 | #5, #14, #21, #27, #30, #33, #35 | RN-11 a 15 |
+| RC-07 | **Casa do Estudante**: tarifa zerada de setembro a dezembro (MDR e antecipação; remessa normal), com período de 01/09 a 31/12/2026 (#39, item 8). O que a Orbe cobrou é **devolução nossa**, separada das divergências e fora da cobrança da Orbe, no valor descontado de fato (R$ 15.396,77). A isenção da antecipação vale pela **data da antecipação**. | É concessão do comercial, fora do contrato. A Orbe cobrou certo pelo que sabia, então quem abriu mão da receita arca com a devolução. | FINANCEIRO | PREMISSA: o que acontece depois de dezembro é decisão do comercial (#40, item 3). | R8, R28, R45, P2, P14 | #5, #14, #21, #27, #30, #33, #35, #39 | RN-11 a 15 |
 | RC-08 | **Atlas** (sem contrato): não fatura, vira pendência e fica **fora** de `comissoes_por_lojista`; o repasse segue normal. Quando o comercial confirmar, a taxa vale desde 10/09 e outubro puxa as linhas de setembro. O CNPJ da aba de 2025 só identifica. | O dinheiro é do lojista. O que fica suspenso é só o faturamento da nossa taxa, até haver taxa. | FINANCEIRO | TIME: ficar fora do arquivo em vez de zerada, e o PIX em `2.1.01.001` como repasse normal (P17, P12). | R7, R31, P12, P17 (parte) | #2, #16, #24, #28, #29 | RN-17 a 20 |
 | RC-09 | **Mapeamento de ECs**: 1043300981 é a Novo Horizonte Intercâmbio; 1043396662, a Horizonte Viagens e Turismo (empresa diferente); 1038867654, a Kiwi Experience. | O EC estava em branco na planilha de taxas; CNPJ e taxas estão nas linhas delas. | FINANCEIRO |  | R6 | #2 | RN-21 |
 | RC-10 | Venda **acima de 12 parcelas** não existe; se aparecer, é pendência. | A Tarvo não vende acima de 12x. | FINANCEIRO |  | R33 | #23 | RN-22 |
@@ -62,15 +65,15 @@ Este arquivo separa o que o financeiro **confirmou**, o que o **time** decidiu (
 | RC-26 | **Já provisionados**: folha, ISS, INSS, FGTS e DARFs de agosto (todo mês a folha e os impostos do mês ficam provisionados) e o repasse de comissão da Ponte de 04/09 (spread de agosto, já comissão a receber). **Todo o resto** (tarifas, aluguel, cloud, assinaturas, serviços) vai direto para a despesa do mês. A provisão de setembro é da contabilidade. | O pagamento do mês seguinte baixa a provisão. Quando o extrato não deixa claro, declara-se a premissa e segue. | FINANCEIRO |  | R21, R44 | #5, #8, #17, #30 | RN-64 a 68 |
 | RC-27 | **Fluxo da Orbe**: deposita tudo no Aurora (débito e Pix no dia seguinte; crédito e parcelado ao longo dos meses). O saldo negativo do Aurora é a **conta garantida**. O repasse é feito perto dos dias 10 e 24, do que a Orbe já liquidou, e pode ser antecipado pela conta garantida, sem limite escrito. **Não** se concilia parcela a parcela. | O que entra no banco em setembro não bate com o líquido do relatório do mês. Conciliar a Orbe contra o banco não é o que a Helena precisa neste fechamento. | FINANCEIRO |  | R24, R25 | #11, #20, #22 | RN-69 a 71 |
 | RC-28 | **Lançamentos sem origem**: o PIX de R$ 7.350 sem identificação **não é receita**; a devolução de R$ 12.400 é um PIX de repasse que voltou; os R$ 300.000 estão em trânsito (saem do Aurora em 30/09 e caem no Meridiano em 01/10); o PIX de R$ 18.240 da Ponte Aérea é remessa de outubro. | Cada um depende de um fato que a Helena deu, e o tratamento é decisão do time, com o motivo escrito. | FINANCEIRO | TIME: as contas (`1.1.09.002`, `2.1.01.001` ou `2.1.01.002`, `1.1.09.001`, `2.1.02.001`) e a escolha de uma só para a devolução (R23, P5, P6, P8). | R19, R22, R23, P5, P6, P7, P8 | #5, #14, #15, #17, #34 | RN-46, 72 a 74 |
-| RC-29 | **Classificação dos extratos por regra** (26 regras em `src/classificacao.py`): 8 contas decorrem da resposta da Helena (folha, INSS, FGTS, ISS, três DARFs e a comissão da Ponte); A03, M06 e M08 foram confirmadas no T-800 (itens 9 e 10); 16 são escolha do time; 2 (M02, TED à Ponte, e M05, CDB) seguem como suposição nossa (N9). | A Helena não valida conta por conta (#23, #24); validou o critério. O detalhe regra a regra está em `REGRAS_NEGOCIO.md`. | FINANCEIRO | TIME: 16 contas. critério nosso em `M02_TED_PONTE` e `M05_CDB` (N9). | P7 e P12 (contas), P10 (parte) | #8, #23, #24 | seção 4 de REGRAS_NEGOCIO |
+| RC-29 | **Classificação dos extratos por regra** (26 regras em `src/classificacao.py`): 8 contas decorrem da resposta da Helena (folha, INSS, FGTS, ISS, três DARFs e a comissão da Ponte); A03, M06 e M08 têm resposta na #39 (itens 9 e 10); 16 são escolha do time; 2 (M02, TED à Ponte, e M05, CDB) têm o princípio na #40 e a conta é critério nosso. | A Helena não valida conta por conta (#23, #24); validou o critério. O detalhe regra a regra está em `REGRAS_NEGOCIO.md`. | FINANCEIRO | TIME: 16 contas. critério nosso em `M02_TED_PONTE` e `M05_CDB` (N9). | P7 e P12 (contas), P10 (parte) | #8, #23, #24 | seção 4 de REGRAS_NEGOCIO |
 | **Governança** | | | | | | | |
 | RC-30 | **Quem aprova**: taxa, condição comercial e cadastro ou contrato, o comercial (a Helena registra); a regra de como fechar, a Helena. Registrar quem aprovou e quando. | A Bia mantém a planilha, mas não decide taxa. Nas férias da Helena, hoje ninguém fecha. | FINANCEIRO |  | R26, R41 | #19, #23 | RN-58, 59 |
 | RC-31 | Quando falta fonte ou informação, **fecha-se o que não depende dela**, marca-se o provisório e o bloqueado, e a Helena libera. Se o layout de um arquivo mudar, a solução avisa em vez de quebrar calada. | A Helena não segura o mês inteiro; já houve arquivo atrasado e parceiro mudando layout sem avisar. | FINANCEIRO |  | R43 | #31 | RN-61, 62 |
 | **Suposições da IA** | | | | | | | |
-| RC-32 | **Fluente**: o Pix a 0,79% é condição negociada com a Fluente (resposta ao T-800, item 7). Fica como está na planilha, sem pendência. A pendência de R$ 9,16 era só a diferença para 0,89% e foi retirada. | A nota da Fluente (R$ 7.316,07) já usava 0,79%. | FINANCEIRO |  | P15 | resposta ao T-800 (7) | RN-24 |
-| RC-33 | A taxa de uma **venda** vale pela data da venda (ex.: aditivo da Bridge "a partir de 15/09"). | Confirmado pela Helena (resposta ao T-800, item 9). O estorno olha a data da venda original; para a venda, vale a data da venda. | FINANCEIRO |  | P3 | resposta ao T-800 (9) | RN-16 |
-| RC-34 | Na nota, **razão social** pelo nome da planilha com o CNPJ; a Bia confere na emissão, e a razão social do contrato de adesão não está no pacote. CNPJ sempre com 14 dígitos (Fluente e Campus Global com o zero restaurado). | Respostas 4 e 5 do T-800. | FINANCEIRO |  | P11 | resposta ao T-800 (4, 5) | RN-55, 56 |
-| RC-35 | O **IOF** das remessas é do cliente: a Tarvo só repassa à Ponte. O IOF s/ crédito de R$ 48,21 é de operação do Meridiano e vai para `4.3.01` (a conta é decisão nossa). **Sem retenção** de ISS ou IRRF pela Ponte; o ISS da nota vai no DAMSP do mês seguinte, fora deste fechamento. | Respostas 2, 3 e 6 do T-800. | FINANCEIRO |  | P10 | resposta ao T-800 (2, 3, 6) | RN-57 |
+| RC-32 | **Fluente**: o Pix a 0,79% da planilha (os demais lojistas têm 0,89%). A comissão e a nota seguem a planilha. A Helena respondeu que é condição negociada (#39, item 7), mas a pendência `TAXA_A_CONFIRMAR` (R$ 9,16) só fecha com confirmação humana. | A Orbe cobrou 0,79% nas 8 vendas de Pix: não há divergência, só a dúvida sobre a planilha. | PREMISSA |  | P15 | #39 (item 7) | RN-24 |
+| RC-33 | A taxa de uma **venda** vale pela data da venda (ex.: aditivo da Bridge "a partir de 15/09"). | Resposta #39 (itens 9 e 10). O estorno olha a data da venda original; para a venda, vale a data da venda. | FINANCEIRO |  | P3 | #39 | RN-16 |
+| RC-34 | Na nota, o **tomador** é o nome da planilha de taxas com o CNPJ. A razão social oficial não está no pacote, então a conferência é a pendência `RAZAO_SOCIAL_NOTAS` (Helena), e não um texto na nota. CNPJ com 14 dígitos (Fluente e Campus Global com o zero à esquerda restaurado). | A planilha tem nomes curtos e perdeu o zero à esquerda por estar em formato numérico. A #39 (itens 4 e 5) aceita o nome da planilha com o CNPJ e confirma os 14 dígitos; a razão social só fecha com confirmação humana. | PREMISSA |  | P11 | #39 (itens 4 e 5) | RN-55, 56 |
+| RC-35 | O **IOF** das remessas é do cliente: a Tarvo só repassa à Ponte. O IOF s/ crédito de R$ 48,21 é de operação do Meridiano e vai para `4.3.01` (a conta é decisão nossa). **Sem retenção** de ISS ou IRRF pela Ponte; o ISS da nota vai no DAMSP do mês seguinte, fora deste fechamento. | #39, itens 2, 3 e 6. | FINANCEIRO |  | P10 | #39 | RN-57 |
 
 ---
 
@@ -109,22 +112,24 @@ A Helena não valida essas escolhas; pediu que fossem escritas, com o motivo. **
 
 ---
 
-## 3. Premissas fechadas na rodada 2 (T-800, 17/10)
+## 3. Rodada 2 (T-800, 17/10): resposta #40
 
-Nenhuma suposição da IA segue aberta. Cada item abaixo tem a decisão, quem decide e o que muda se estiver errado. Esses ficam também como `pendencias.csv` quando dependem de alguém.
+A Helena respondeu as 10 perguntas no canal, e o texto está em `duvidas_financeiro.csv` como resposta #40 (a rodada 1 é a #39). O que depende de alguém segue em `pendencias.csv` até confirmação humana.
 
-| # | Item | Resposta / decisão | Quem decide | Se estiver errada |
+| # | Item | Resposta (#40) | Como ficou | Pendência e decisor |
 |---|---|---|---|---|
-| N1 | Prazo da contestação à Ponte | A Helena disse que ainda estamos no prazo, porque o fechamento é esta semana. Essa é a premissa da Helena, **não** confirmada pela Ponte: o e-mail de 02/10 (5 dias úteis) venceu em 09/10. **Decisão nossa:** a contestação só é enviada com a data confirmada por escrito pela Ponte. | Helena (financeiro) | A Ponte pode recusar a contestação (Mundo Aberto, spreads negativos, duplicata). |
-| N2 | Valor pedido à Ponte na Mundo Aberto | Decisão nossa: **R$ 1.418,88** (Spread R$ realizado, o que a Ponte paga). A diferença é de centavos, e a Helena pediu para registrarmos o critério (RN-40). | Equipe | Três centavos. |
-| N3 | Casa do Estudante em 2027 | Renovar ou não é decisão do comercial, sem previsão. A Casa segue sem condição depois de 31/12/2026, e a pendência está com o comercial. | Comercial | Se a isenção continuar, a tabela precisa de nova condição em `config/condicoes_comerciais.csv`. |
-| N4 | PIX de R$ 7.350 sem identificação | A conta 1.1.09.002 segue como critério nosso. O Caio vai atrás do pagador com o banco até o fechamento de outubro. | Caio (bancos) | Reclassifica quando identificado. |
-| N5 | Devolução de R$ 12.400 | Decisão nossa: **2.1.01.001** (a Helena disse que as duas contas servem). | Equipe | Reclassificar entre 2.1.01.001 e 2.1.01.002. |
-| N6 | Transferência de R$ 300.000 | A conta 1.1.09.001 segue como critério nosso. Se a entrada no Meridiano não aparecer em outubro, a pendência vai para a tesouraria, que é a Helena. | Helena (tesouraria) | Sem contrapartida no mês até a entrada. |
-| N7 | PIX de R$ 18.240 da Ponte Aérea | Confirmado: é remessa de outubro. A baixa sai quando a remessa liquidar, pelo relatório de outubro da Ponte. | Helena (financeiro) | — |
-| N8 | Contas de despesa (A02, A12, A13, A14, A15, M07, M08) | A regra geral é confirmada (despesa do mês vai direto na despesa). As contas específicas são critério nosso, registradas aqui. | Equipe | Reclassificar a conta, sem efeito no total. |
-| N9 | TED à Ponte (M02) e CDB (M05) | Confirmado no princípio: o TED da Ponte baixa recurso de lojista (passivo, 2.1.02.001) e o CDB não tem efeito no resultado (1.1.02.001). A conta segue como critério nosso. | Equipe | Reclassificar a conta. |
-| N10 | Atlas (EC 1076801732) | Quem decide a taxa é o Diego, do comercial, sem previsão. A Atlas segue retida. | Comercial (Diego) | Sem taxa, a Atlas fica fora do faturamento. |
+| N1 | Prazo da contestação à Ponte | "Ainda estamos no prazo, porque o fechamento é esta semana." | O e-mail de 02/10 dá 5 dias úteis: **2026-10-09**, já vencido. A contestação só sai com a data confirmada por escrito. | Pendências da Ponte, `prazo = 2026-10-09`, Helena (financeiro) |
+| N2 | Valor na Mundo Aberto | "Escolham um e registrem." | R$ 1.418,88 (Spread R$ realizado). A delegação está também no CSV (resposta 23). | `CONTESTACAO_PONTE`, Helena (financeiro) |
+| N3 | Casa em 2027 | Renovar é decisão do comercial. | Sem condição depois de 31/12/2026 (P14). | Sem pendência própria; a condição da Casa está em `CADASTRO_CONDICAO` |
+| N4 | PIX de R$ 7.350 | A equipe de bancos vai atrás do pagador. | Conta 1.1.09.002 (resposta 5: não é receita). | `PIX_SEM_IDENTIFICACAO`, Helena (financeiro) |
+| N5 | Devolução de R$ 12.400 | As duas contas servem. | 2.1.01.001 (resposta 17 também delega). | `DEVOLUCAO_PIX`, Helena (financeiro) |
+| N6 | Transferência de R$ 300.000 | Se não aparecer em outubro, vai para a tesouraria. | Conta 1.1.09.001. | `TRANSFERENCIA_EM_TRANSITO`, Helena (financeiro) |
+| N7 | PIX de R$ 18.240 | A baixa sai pelo relatório de outubro da Ponte. | 2.1.02.001; o "fica em recursos para remessas" está no CSV (resposta 34). | `PIX_SEM_OPERACAO`, Helena (financeiro) |
+| N8 | Contas de despesa | A regra geral (despesa do mês) já está no CSV (resposta 8). | Contas específicas são critério nosso. | — |
+| N9 | TED à Ponte e CDB | Recurso de lojista no passivo; aplicação sem efeito no resultado. | 2.1.02.001 e 1.1.02.001, critério nosso. | — |
+| N10 | Atlas | Quem decide a taxa é o Diego, do comercial. | Atlas retida. | `EC_RETIDO`, Diego (comercial), prazo fechamento de outubro (resposta 16) |
+
+Os lançamentos com decisor pendente (L50, L65, MRD2026090425 e L92) têm confiança de no máximo 0,70 em `lancamentos_classificados.csv`, pela regra em `src/classificacao.py`.
 
 ---
 
@@ -138,9 +143,9 @@ Nenhuma suposição da IA segue aberta. Cada item abaixo tem a decisão, quem de
 | "Em aberto" 7: ajustes tardios da Orbe | Respondida na #36 (RC-12). |
 | "Em aberto" 8: reversões tardias de antecipação | Descartada: a #11 diz que não é preciso conciliar a Orbe contra o banco neste fechamento. |
 | As oito premissas antigas | Confirmadas pelo financeiro (R1 a R5, R6/R7, R12, R13, R15, R16). |
-| Juros da conta garantida (T-800, item 1) | Vêm no extrato do mês seguinte. A pendência `CONTA_GARANTIDA_SEM_ENCARGOS` foi removida: o −R$ 2.289.532,94 era saldo, não valor a lançar. |
-| Fluente, Pix a 0,79% (T-800, item 7) | Condição negociada. A pendência `TAXA_A_CONFIRMAR` (R$ 9,16) foi removida, e `config/taxas_a_confirmar.csv` ficou só com o cabeçalho. A nota já usava 0,79%, então nenhum valor mudou. |
-| DARF sem competência (#5, #17) | A Helena disse que são de agosto e já estavam provisionados. As 3 pendências `DARF_SEM_COMPETENCIA` ainda estão no arquivo e precisam ser fechadas; ver nota ao final. |
+| Juros da conta garantida | **Aberta até confirmação humana.** A #39 (item 1) diz que os juros vêm no extrato do mês seguinte. A pendência tem `valor_brl` 0,00 e o menor saldo (−R$ 2.289.532,94) em `valor_referencia_brl`, marcada REFERÊNCIA, NÃO SOMAR. |
+| Fluente, Pix a 0,79% | **Aberta até confirmação humana.** A #39 (item 7) diz que é condição negociada. `TAXA_A_CONFIRMAR` (R$ 9,16) fica com a Helena. A nota não muda: já usava 0,79%. |
+| DARF sem competência (L57, L86, L87; R$ 77.198,01) | **Retirada, com fonte:** respostas 5, 8 e 17 do CSV (os DARFs são de agosto e já estavam provisionados). A observação dos lançamentos cita essas respostas, e não uma pendência. |
 
 ### Detalhe da P9 (contribuição do Gabriel, commit `90d0d6b`; superada pela R27, mantida como histórico)
 
@@ -172,7 +177,7 @@ Itens R33 a R47 são respostas da Helena que o arquivo antigo não tinha (R38 e 
 | P12 | FINANCEIRO | RC-08, RC-29 |
 | P13 | FINANCEIRO | RC-12 |
 | P14 | IA | RC-07 |
-| P15 | FINANCEIRO | RC-32 |
+| P15 | PREMISSA | RC-32 |
 | P16 | TIME | RC-21 |
 | P17 | TIME | RC-08, RC-14 |
 | P18 | TIME | sem regra de negócio (desenho) |
@@ -279,7 +284,7 @@ Números do notebook `analise_setembro.ipynb` (prévias; o financeiro disse que 
 - **Remessa fecha com o banco**: cada um dos 21 TEDs para a Ponte é a soma de (Valor R$ + IOF) das operações do dia, e o PIX de cada lojista é a soma das suas operações (13 de 14 exatos). A exceção é o PIX de R$ 18.240,00 (R19).
 - **Checkout não fecha com o banco**, e o financeiro disse que não é preciso neste fechamento (R24).
 - **Estornos de venda de agosto**: 9 linhas, −R$ 941,70 de taxa, abatendo a comissão de setembro.
-- **Checkout calculado por `src/checkouts`** (com os ajustes tardios): **R$ 203.735,34 em 21 lojistas** (os R$ 203.740,84 dos 20 com nota menos os −R$ 5,50 da Casa, P17), 1.900 linhas no rastro e 57 da Atlas retidas. **Divergências: 92 linhas, R$ 1.576,23** (Rota Global R$ 1.546,28; Bridge R$ 29,95). São 9 pendências: Atlas (comercial), Casa negativa, devolução da Casa (R$ 15.396,77, R28), 2 contestações com a Orbe (R29) e 4 de cadastro (seção 7.1). Batem com a prévia independente e com o notebook.
+- **Checkout calculado por `src/checkouts`** (com os ajustes tardios): **R$ 203.735,34 em 21 lojistas** (os R$ 203.740,84 dos 20 com nota menos os −R$ 5,50 da Casa, P17), 1.900 linhas no rastro e 57 da Atlas retidas. **Divergências: 92 linhas, R$ 1.576,23** (Rota Global R$ 1.546,28; Bridge R$ 29,95). São 10 pendências: Atlas (comercial), Fluente (Helena, P15), Casa negativa, devolução da Casa (R$ 15.396,77, R28), 2 contestações com a Orbe (R29) e 4 de cadastro (seção 7.1). Batem com a prévia independente e com o notebook.
 
 ---
 

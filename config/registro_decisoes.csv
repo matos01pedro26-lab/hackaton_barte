@@ -1,0 +1,63 @@
+decisao;status;quem_decidiu;data;fonte
+Comissão de checkout é a taxa inteira (sem custo da Orbe) calculada pela taxa contratada e não pelo valor_taxa da Orbe;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 3 e 12
+Estorno abate a comissão do mês do estorno pela taxa da data da venda original (faixa da linha do estorno);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 1 e 28
+Antecipação entra na mesma nota e a reversão só anula a antecipação que reverte;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 3 e 12
+Arredondamento comum ao centavo linha a linha (meio centavo para cima) e na remessa por operação;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 7
+Divergência de checkout = bruto x (taxa aplicada - contratada) transação por transação;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 7 e 28
+O contrato decide quem arca: Rota Global e Bridge (aditivo 2,19% desde 15/09) e Mundo Aberto (1,20%) são divergência;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 5 e 27
+Casa do Estudante com tarifa zerada de setembro a dezembro (MDR e antecipação) e devolução nossa separada das divergências;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 5 14 21 27 e 30
+Valor da devolução à Casa é o descontado de fato (R$ 15.396,77);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 33
+Isenção da antecipação da Casa vale pela data da antecipação;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 35
+Atlas sem contrato não fatura e vira pendência e o repasse segue normal;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 2 24 28 e 29
+Quando o comercial confirmar a taxa da Atlas ela vale desde 10/09 e outubro puxa as linhas de setembro;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 16
+Mapeamento dos ECs 1043300981 1043396662 e 1038867654;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 2
+Venda acima de 12 parcelas vira pendência;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 23
+Estorno com bandeira diferente da venda segue o vínculo pela referência sem pendência;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 37
+Ajustes tardios da Orbe entram no mês do movimento se chegarem antes da aprovação do fechamento;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 36
+Comissão zero ou negativa não emite nota e vira pendência para a Helena;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 3 26 e 28
+Checkout: uma nota por lojista por mês com texto simples de serviço e competência;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 3
+Remessa: uma nota só com a Ponte Câmbio como tomadora pelo total da participação;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 3
+Comissão da remessa = 50% do Spread R$ realizado e spread em branco ou padrão = 1,5% sobre a PTAX;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 4
+Spread negativo fica fora da comissão e da nota e vira pendência de contestação com os dois valores rotulados;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 4 13 e 27
+Operação repetida conta uma vez (o número da operação é único);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 4
+Status APROVADO C/ RESSALVA não muda nada e vale a data de contratação;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 4
+Divergência de remessa é o valor cheio pago a mais pelo lojista;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 6
+Nota da Ponte sai pelo realizado e a contestação é processo à parte;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 9
+Ajuste da Ponte (AJUSTE REF PC-...) entra no mês em que aparece e abate a participação dentro da nota única;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 26
+Não contar com desconto no repasse da Ponte e conferir o TED quando cair;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 10
+Contestação: uma pendência por contraparte e por lojista e rascunho de e-mail revisado pela Helena;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 18 e 23
+Classificação dos extratos pela contrapartida: o que já estava registrado baixa a conta onde estava;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 8
+Folha e tributos (inclusive os DARFs) pagos em setembro são de agosto e já estavam provisionados (as 3 pendências de DARF ficam retiradas);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 5 8 e 17
+Repasse da Ponte de 04/09 é o spread de agosto já registrado como comissão a receber;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 5 e 8
+Tarifas aluguel cloud assinaturas e serviços entram direto na despesa do mês;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 8
+Provisão de setembro é da contabilidade e fica fora do fechamento;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 30
+A Orbe deposita tudo no Aurora e o saldo negativo é a conta garantida (sem conciliar parcela a parcela);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 11 e 22
+PIX de R$ 7.350 sem identificação não é receita até alguém identificar;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 5
+Devolução de R$ 12.400 é PIX de repasse que voltou e as contas 2.1.01.001 ou 2.1.01.002 servem;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 5 e 17
+Transferência de R$ 300.000 saiu do Aurora em 30/09 e cai no Meridiano em 01/10;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 5
+PIX de R$ 18.240 é remessa de outubro e fica em recursos para remessas (2.1.02.001);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 14 15 e 34
+Taxa e condição comercial aprova o comercial e regra de como fechar aprova a Helena;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv respostas 19 e 23
+Faltou fonte: fecha o que não depende e marca o provisório e o bloqueado;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta 31
+Tolerância de 0,005 p.p. no spread da remessa (critério delegado à equipe);PREMISSA;;;duvidas_financeiro.csv respostas 6 e 7 delegam o critério e config/parametros.csv registra a escolha
+Divergência da Mundo Aberto calculada pelo Spread R$ realizado (R$ 1.418,88) e não pelo spread_pct (R$ 1.418,85);PREMISSA;;;duvidas_financeiro.csv resposta 23 delega a escolha
+Alerta de antecipação pelo pico antecipado (critério delegado à equipe);PREMISSA;;;duvidas_financeiro.csv respostas 27 30 e 32 delegam o critério
+Atlas fora de comissoes_por_lojista (e não zerada);PREMISSA;;;duvidas_financeiro.csv resposta 29 aceita as duas formas
+Comissão negativa da Casa (-R$ 5,50) fica em comissoes_por_lojista com o valor real;PREMISSA;;;duvidas_financeiro.csv resposta 28 deixa a escolha com a equipe
+Devolução de R$ 12.400 lançada em 2.1.01.001;PREMISSA;;;duvidas_financeiro.csv resposta 17 pede escolher uma conta
+PIX de R$ 7.350 em 1.1.09.002 e transferência de R$ 300.000 em 1.1.09.001;PREMISSA;;;Escolha da equipe pelo plano de contas (resposta 5 deixa o tratamento com a equipe)
+Operação da Ponte de CNPJ fora da planilha: calcular a nossa metade e abrir pendência de cadastro;PREMISSA;;;duvidas_financeiro.csv resposta 15 (tratamento razoável e registrar como premissa)
+Contas de despesa específicas (4.2.01 a 4.2.06) e Google Workspace em 4.2.04;PREMISSA;;;Helena não valida conta por conta (duvidas_financeiro.csv respostas 23 e 24)
+Fluente: Pix a 0,79% é condição negociada (pendência TAXA_A_CONFIRMAR segue aberta);PREMISSA;;;duvidas_financeiro.csv resposta #39 item 7. A pendência só fecha com confirmação humana
+Juros da conta garantida vêm no extrato do mês seguinte (pendência CONTA_GARANTIDA_SEM_ENCARGOS segue aberta);PREMISSA;;;duvidas_financeiro.csv resposta #39 item 1. A pendência só fecha com confirmação humana
+Razão social do tomador = nome da planilha com o CNPJ (pendência RAZAO_SOCIAL_NOTAS segue aberta);PREMISSA;;;duvidas_financeiro.csv resposta #39 item 4. A pendência só fecha com confirmação humana
+CNPJ com 14 dígitos (zero à esquerda restaurado na Fluente e na Campus Global);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 5
+Ponte não retém ISS nem IRRF e o ISS da nota vai no DAMSP do mês seguinte;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 6
+IOF das remessas é do cliente e a Tarvo só repassa à Ponte;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 3
+Isenção da Casa de 01/09/2026 a 31/12/2026;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 8
+Taxa de uma venda vale pela data da venda;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 itens 9 e 10
+Contestação à Ponte ainda dentro do prazo;PREMISSA;;;duvidas_financeiro.csv resposta #39 e #40 item 1. O e-mail de 02/10 dá 5 dias úteis (2026-10-09). Só fecha com confirmação humana
+Rendimento de aplicação é receita do mês e seguro é despesa do mês;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 10
+Diego (comercial) decide a taxa da Atlas;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #40 (resposta sobre a Atlas)
+Linha da Ponte que fala em ajuste fora do padrão AJUSTE REF vira pendência e não entra na comissão;PREMISSA;;;Decisão de desenho da equipe (nunca ocorreu)
+Lançamento com decisor pendente tem confiança de no máximo 0,70;PREMISSA;;;Decisão de desenho da equipe
+Registrar EC ou condição na planilha de taxas é tarefa da Bia;PREMISSA;;;duvidas_financeiro.csv respostas 20 e 23 (a Bia mantém a planilha)

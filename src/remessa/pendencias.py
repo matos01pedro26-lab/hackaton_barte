@@ -45,6 +45,13 @@ def montar_pendencias(classificadas: list[OpClassificada], diferencas: list[Dife
                                    "Spread negativo no relatório (valor que aconteceu). Fora da comissão e da nota; "
                                    "a trava passou do prazo de 2 horas. Contestar com a Ponte.", ponte))
             rastro.append(_rastro(id_saida, c, op.spread_brl))
+        elif c.classe is Classe.AJUSTE_NAO_RECONHECIDO:
+            id_saida = id_pendencia(mes, "AJUSTE_NAO_RECONHECIDO", op.num_op)
+            pend.append(_pendencia(id_saida, "AJUSTE_NAO_RECONHECIDO", [op.num_op], op.spread_brl,
+                                   f"Observação \"{op.observacao}\" fala em ajuste, mas não segue o padrão "
+                                   "\"AJUSTE REF PC-...\" e não diz qual operação ajusta (contratação "
+                                   f"{op.data_contratacao}). Fora da comissão e da nota até a Helena decidir.", ponte))
+            rastro.append(_rastro(id_saida, c, op.spread_brl))
         elif c.classe is Classe.FORA_COMPETENCIA:
             id_saida = id_pendencia(mes, "FORA_COMPETENCIA", op.num_op)
             pend.append(_pendencia(id_saida, "FORA_COMPETENCIA", [op.num_op], op.spread_brl,

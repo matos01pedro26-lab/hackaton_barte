@@ -9,6 +9,7 @@ Base: `01_instrucoes_participantes.docx` e as 38 respostas de `duvidas_financeir
 | **FINANCEIRO** | Dito de forma explícita e direta pela Helena (ou pela organização, quando for o caso). Cito o #n. | Não |
 | **TIME** | A Helena **delegou** ("o critério é de vocês", "escolham uma e escrevam o motivo") ou o time definiu no brief (mapeamento de referência de 24 linhas dos extratos). Falta o time ratificar e escrever o motivo no `HIPOTESES.md`. | Não |
 | **IA** | Suposição minha, sem resposta que a sustente. Não vale como regra confirmada. | **Sim**: ver `PERGUNTAS_FINANCEIRO.md` (N1 a N10, rodada 2) |
+| **PREMISSA** | Resposta escrita que ainda depende de **confirmação humana** para fechar uma pendência (Fluente, juros da conta garantida, razão social das notas e prazo da Ponte), ou escolha nossa sem fonte escrita. Vale para trabalhar, e a pendência continua aberta. | Não: ver `config/registro_decisoes.csv` |
 
 Regras do edital e da organização ficam em seção própria, sem `MTD_INFERENCIA`, porque não são inferência de ninguém.
 
@@ -32,8 +33,8 @@ Regras do edital e da organização ficam em seção própria, sem `MTD_INFERENC
 | RN-12 | Casa: o que a Orbe cobrou é **devolução nossa** (concessão do comercial fora do contrato), separada das divergências de contrato e **fora da cobrança da Orbe**. | FINANCEIRO | #5, #14, #21, #27, #30 | Pode listar as linhas em divergências se rotuladas como isenção (#21, #30). |
 | RN-13 | A devolução à Casa é o valor **descontado de fato** (`valor_taxa`): R$ 15.396,77, e não a fórmula (R$ 15.397,42). | FINANCEIRO | #33 | |
 | RN-14 | A isenção da antecipação vale pela **data da antecipação**, sem procurar as vendas de origem. | FINANCEIRO | #35 | |
-| RN-15 | "Setembro a dezembro" da Casa = de **01/09/2026 a 31/12/2026**, confirmado pela Helena (T-800, item 8). A volta à planilha em 2027 é decisão do comercial (**N3**). | FINANCEIRO | P2, P14 | N3 (comercial) |
-| RN-16 | A taxa de uma **venda** vale pela data da venda (ex.: aditivo da Bridge "a partir de 15/09"). | FINANCEIRO | P3 | resposta ao T-800 (9) |
+| RN-15 | "Setembro a dezembro" da Casa = de **01/09/2026 a 31/12/2026**, segundo a #39 (item 8). A volta à planilha em 2027 é decisão do comercial (#40, item 3). | FINANCEIRO | P2, P14 | #39; 2027 com o comercial |
+| RN-16 | A taxa de uma **venda** vale pela data da venda (ex.: aditivo da Bridge "a partir de 15/09"). | FINANCEIRO | P3 | #39 (itens 9 e 10) |
 | RN-17 | **Atlas** sem contrato: não fatura, vira pendência, e o **repasse segue normal**. | FINANCEIRO | #2, #24, #28, #29 | |
 | RN-18 | Atlas: quando o comercial confirmar, a taxa vale **desde 10/09** e o fechamento de outubro puxa as linhas de setembro. | FINANCEIRO | #16 | |
 | RN-19 | O CNPJ da aba de 2025 pode **identificar** a Atlas; a taxa daquela aba não vale. | FINANCEIRO | #29 | |
@@ -41,7 +42,7 @@ Regras do edital e da organização ficam em seção própria, sem `MTD_INFERENC
 | RN-21 | Os três ECs sem cadastro são a Novo Horizonte Intercâmbio (1043300981), a Horizonte Viagens e Turismo (1043396662) e a Kiwi Experience (1038867654). | FINANCEIRO | #2 | |
 | RN-22 | A Tarvo não vende acima de 12 parcelas; se aparecer, é pendência. | FINANCEIRO | #23 | |
 | RN-23 | Estorno com bandeira diferente da venda: segue o vínculo pela referência, **sem contestar nem abrir pendência**. | FINANCEIRO | #37 | |
-| RN-24 | **Fluente**: o Pix a 0,79% é condição negociada (T-800, item 7). Fica como está na planilha, sem pendência. A pendência de R$ 9,16 foi retirada, porque a nota já usava 0,79%. | FINANCEIRO | P15 | resposta ao T-800 (7) |
+| RN-24 | **Fluente**: o Pix a 0,79% da planilha (demais lojistas 0,89%). A comissão e a nota seguem a planilha. A Helena respondeu que é condição negociada (#39, item 7), mas a pendência `TAXA_A_CONFIRMAR` (R$ 9,16) só fecha com confirmação humana. | PREMISSA | P15 | #39 (item 7) |
 | RN-25 | O **alerta de antecipação** (critério) é do time; ele vai para a Helena e o comercial e **não muda nenhum número**. | TIME | #14, #27, #30, #32 | O destinatário do alerta é FINANCEIRO (#14). Critério atual: R32 do `HIPOTESES.md`. |
 | RN-26 | Orbe cobrando **abaixo** do contrato também é divergência; a Helena decide caso a caso. Não ocorreu em setembro. | FINANCEIRO | #14 | |
 | RN-27 | **Ajustes tardios da Orbe** (arquivo 06): entram no mês do movimento se chegarem antes da aprovação; depois, no mês seguinte. | FINANCEIRO | #36 | Confirma a P13 (resolve a pergunta 7 antiga). |
@@ -69,7 +70,7 @@ Regras do edital e da organização ficam em seção própria, sem `MTD_INFERENC
 | RN-44 | Não contar que a Ponte descontará algo do repasse. Conferir o TED quando cair é pendência boa. | FINANCEIRO | #10 | |
 | RN-45 | Operação de **CNPJ fora da planilha**: calcular a nossa metade mesmo assim e abrir pendência de cadastro para o comercial. Registrar como premissa. | TIME | #15 | Não ocorreu em setembro. |
 | RN-46 | O PIX de R$ 18.240,00 é dinheiro de uma remessa que sai em outubro e fica em **recursos para remessas**. A Ponte Aérea Estudantil é lojista, sem relação com a Ponte Câmbio. | FINANCEIRO | #14, #15, #34 | |
-| RN-47 | A contestação à Ponte está **dentro do prazo**, segundo a Helena (T-800, 1). O e-mail da Ponte deu 5 dias úteis a partir de 02/10 (09/10). **Decisão nossa:** a contestação só é enviada com a data confirmada por escrito pela Ponte. | FINANCEIRO | R18 | **N1** |
+| RN-47 | A contestação à Ponte está **dentro do prazo**, segundo a Helena (#39 e #40, item 1). O e-mail da Ponte deu 5 dias úteis a partir de 02/10 (09/10). **Decisão nossa:** a contestação só é enviada com a data confirmada por escrito pela Ponte. | PREMISSA | R18 | **N1** |
 | RN-48 | A contestação sai como **rascunho de e-mail por contraparte**, com as operações anexadas; a Helena revisa e envia. | FINANCEIRO | #18 | |
 
 ## 3. Notas e pendências
@@ -81,9 +82,9 @@ Regras do edital e da organização ficam em seção própria, sem `MTD_INFERENC
 | RN-52 | **Remessa**: uma nota só, com a Ponte Câmbio como tomadora, pelo total da participação do mês. Não há nota por lojista. | FINANCEIRO | #3 | |
 | RN-53 | Não existe texto padrão: basta o serviço e a competência. | FINANCEIRO | #3 | O texto usado hoje é escolha nossa. |
 | RN-54 | A nota só documenta a taxa que a Orbe já descontou; não gera cobrança nova. | FINANCEIRO | #20 | |
-| RN-55 | Razão social do tomador: usar o **nome da planilha** com o CNPJ; a Bia confere na emissão. | FINANCEIRO | | resposta ao T-800 (4) |
-| RN-56 | CNPJ sempre com **14 dígitos**; o zero à esquerda se perdeu na planilha (Fluente, Campus Global). | FINANCEIRO | P11 | resposta ao T-800 (5) |
-| RN-57 | **Sem retenção** de ISS ou IRRF pela Ponte; o ISS da nota vai no DAMSP do mês seguinte, fora deste fechamento. | FINANCEIRO | | resposta ao T-800 (6) |
+| RN-55 | Tomador da nota: o **nome da planilha** com o CNPJ. A discriminação da nota é só serviço e competência; a conferência da razão social é a pendência `RAZAO_SOCIAL_NOTAS` (Helena). | PREMISSA |  | #39 (item 4); fecha com confirmação humana |
+| RN-56 | CNPJ sempre com **14 dígitos**; o zero à esquerda se perdeu na planilha (Fluente, Campus Global). | FINANCEIRO | P11 | #39 (item 5) |
+| RN-57 | **Sem retenção** de ISS ou IRRF pela Ponte; o ISS da nota vai no DAMSP do mês seguinte, fora deste fechamento. | FINANCEIRO |  | #39 (item 6) |
 | RN-58 | **Taxa e condição comercial**: aprova o comercial, e a Helena registra. **Regra de como fechar**: aprova a Helena. Registrar quem aprovou e quando. | FINANCEIRO | #19 | |
 | RN-59 | Decisão de cadastro e contrato é do **comercial**; a Bia mantém a planilha, mas não decide taxa. | FINANCEIRO | #23 | |
 | RN-60 | Pendência de contestação: **uma por contraparte e por lojista**, com o detalhe das transações anexado. | FINANCEIRO | #23 | As pendências de spread negativo estão **por operação**; ver aviso no relatório. |
@@ -117,7 +118,7 @@ Helena disse duas vezes que **não valida conta por conta** (#23, #24). Por isso
 |---|---|---|---|---|
 | A01_ORBE | TED recebida da Orbe | 1.1.03.001 | TIME | #11 ("os créditos da Orbe vocês classificam") e RN-63 |
 | A02_CONTABILIDADE | PIX enviado a "contabilidade" | 4.2.06 | TIME | Referência do brief (L53); RN-66 (serviços) |
-| A03_REPASSE | PIX enviado (qualquer) | 2.1.01.001 | FINANCEIRO | Resposta ao T-800 (9): em setembro, o único PIX enviado que não é repasse é o da contabilidade (A02). Para quem não é lojista, a premissa serve. |
+| A03_REPASSE | PIX enviado (qualquer) | 2.1.01.001 | FINANCEIRO | #39 (item 9): em setembro, o único PIX enviado que não é repasse é o da contabilidade (A02). Para quem não é lojista, a premissa serve. |
 | A04_TRANSFERENCIA | Transferência entre contas | 1.1.09.001 | TIME | #5: "o que fazer é decisão sua" |
 | A05_FOLHA | Pagamento de salários | 2.1.04.001 | FINANCEIRO | RN-64; a conta é a homônima do plano e foi o exemplo da própria pergunta #8 |
 | A06_INSS | GPS INSS | 2.1.04.002 | FINANCEIRO | RN-64 |
@@ -133,14 +134,14 @@ Helena disse duas vezes que **não valida conta por conta** (#23, #24). Por isso
 | A16_PIX_SEM_ID | PIX recebido sem identificação | 1.1.09.002 | TIME | RN-72 é FINANCEIRO; a conta é referência (L50) |
 | A17_DEVOLUCAO | Devolução de PIX | 2.1.01.001 | TIME | RN-73: escolher uma conta e escrever o motivo |
 | M01_PIX_LOJISTA | PIX recebido de lojista | 2.1.02.001 | TIME | #34 ("fica em recursos para remessas") vale para o PIX de R$ 18.240; o resto segue o mesmo critério |
-| M02_TED_PONTE | TED enviada à Ponte (liquidação) | 2.1.02.001 | FINANCEIRO | Princípio confirmado (T-800, 8 e 9): recurso de lojista fica no passivo. A conta é critério nosso (**N9**) |
+| M02_TED_PONTE | TED enviada à Ponte (liquidação) | 2.1.02.001 | TIME | Princípio na #40 (itens 8 e 9): recurso de lojista fica no passivo. A conta é critério nosso (**N9**) |
 | M03_TRANSFERENCIA | TED recebida da própria Tarvo | 1.1.09.001 | TIME | #5: tratamento é do time |
 | M04_COMISSAO_PONTE | TED de repasse de comissão da Ponte | 1.1.03.002 | FINANCEIRO | RN-65: "já estava como comissão a receber" |
-| M05_CDB | Aplicação ou resgate automático | 1.1.02.001 | FINANCEIRO | Princípio confirmado (T-800, 8 e 9): aplicação não tem efeito no resultado. A conta é critério nosso (**N9**) |
-| M06_RENDIMENTO | Rendimento de aplicação | 3.2.01 | FINANCEIRO | Resposta ao T-800 (10): receita do mês |
+| M05_CDB | Aplicação ou resgate automático | 1.1.02.001 | TIME | Princípio na #40 (itens 8 e 9): aplicação não tem efeito no resultado. A conta é critério nosso (**N9**) |
+| M06_RENDIMENTO | Rendimento de aplicação | 3.2.01 | FINANCEIRO | #39 (item 10): receita do mês |
 | M07_TARIFA | Tarifa bancária (Meridiano) | 4.2.01 | TIME | Referência; RN-66 |
-| M08_SEGURO | Seguro empresarial | 4.2.05 | FINANCEIRO | Resposta ao T-800 (10): despesa do mês, como assinatura. A conta 4.2.05 segue em **N8** |
-| M09_IOF | IOF s/ operação de crédito | 4.3.01 | TIME | Resposta ao T-800 (2): a operação é do Meridiano e a conta é decisão nossa |
+| M08_SEGURO | Seguro empresarial | 4.2.05 | FINANCEIRO | #39 (item 10): despesa do mês, como assinatura. A conta 4.2.05 segue em **N8** |
+| M09_IOF | IOF s/ operação de crédito | 4.3.01 | TIME | #39 (item 2): a operação é do Meridiano e a conta é decisão nossa |
 
 ---
 
@@ -165,8 +166,9 @@ Contagem feita sobre as tabelas das seções 1 a 4.
 
 | MTD_INFERENCIA | Regras de negócio e critérios (RN) | Contas da classificação (A e M) | Total |
 |---|---|---|---|
-| FINANCEIRO | 66 | 13 | 79 |
-| TIME | 7 | 13 | 20 |
+| FINANCEIRO | 63 | 11 | 74 |
+| TIME | 7 | 15 | 22 |
+| PREMISSA | 3 | 0 | 3 |
 | IA | 0 | 0 | 0 |
 
-Não sobra suposição **IA** aberta: a rodada 2 (N1 a N10) foi respondida em 17/10 e está fechada em `HIPOTESES.md`, seção 3. As contas TIME são critério nosso, registrado com o motivo; a Helena disse que não confere conta por conta.
+As linhas PREMISSA dependem de confirmação humana para fechar a pendência (Fluente, razão social e prazo da Ponte) ou são escolha nossa. O status de cada decisão, com a fonte, está em `config/registro_decisoes.csv`.

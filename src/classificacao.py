@@ -44,6 +44,8 @@ COL_RASTRO = ["id_saida", "arquivo_origem", "ref_origem", "valor"]
 
 PROVISAO = ("Já provisionado no fechamento do mês anterior (Helena, financeiro): o pagamento baixa a provisão e "
             "não vira despesa.")
+DARF_AGOSTO = (" O extrato não declara a competência; a Helena disse que os DARFs pagos em setembro são de agosto e "
+               "já estavam provisionados (duvidas_financeiro.csv, linhas 5 e 17).")
 
 
 @dataclass(frozen=True)
@@ -78,11 +80,11 @@ REGRAS: tuple[Regra, ...] = (
     _r("A07_FGTS", "AURORA", r"^GRF FGTS", "2.1.04.003", 0.95, obs=PROVISAO),
     _r("A08_ISS", "AURORA", r"^PAGTO ISS", "2.1.03.003", 0.95, obs=PROVISAO),
     _r("A09_DARF_IRRF", "AURORA", r"^DEBITO DARF 0561", "2.1.03.004", 0.90,
-       obs=PROVISAO + " Competência não declarada no extrato (pendência)."),
+       obs=PROVISAO + DARF_AGOSTO),
     _r("A10_DARF_PIS", "AURORA", r"^DEBITO DARF 8109", "2.1.03.001", 0.90,
-       obs=PROVISAO + " Competência não declarada no extrato (pendência)."),
+       obs=PROVISAO + DARF_AGOSTO),
     _r("A11_DARF_COFINS", "AURORA", r"^DEBITO DARF 2172", "2.1.03.002", 0.90,
-       obs=PROVISAO + " Competência não declarada no extrato (pendência)."),
+       obs=PROVISAO + DARF_AGOSTO),
     _r("A12_CONDOMINIO", "AURORA", r"^BOLETO CONDOMINIO", "4.2.02", 0.95, obs="Aluguel e condomínio: despesa do mês."),
     _r("A13_AWS", "AURORA", r"^DEB AUT AMAZON WEB SERVICES", "4.2.03", 0.95, obs="Cloud: despesa do mês."),
     _r("A14_GOOGLE", "AURORA", r"^CARTAO PJ - GOOGLE WORKSPACE", "4.2.04", 0.70, premissa=True,
@@ -139,9 +141,15 @@ def ler_banco(caminho: Path) -> list[dict]:
     return list(csv.DictReader(io.StringIO(texto), delimiter=";"))
 
 
+CONFIANCA_DECISOR_PENDENTE = Decimal("0.70")
+
+
 def classificar(lancamentos: list[dict], plano: dict[str, dict], sugestor: Sugestor | None = None,
-                regras: tuple[Regra, ...] = REGRAS) -> tuple[list[dict], list[dict], list[dict]]:
-    """Devolve (linhas de lancamentos_classificados, linhas de rastro, lançamentos sem regra)."""
+                regras: tuple[Regra, ...] = REGRAS,
+                decisor_pendente: set[tuple[str, str]] = frozenset()) -> tuple[list[dict], list[dict], list[dict]]:
+    """Devolve (linhas de lancamentos_classificados, linhas de rastro, lançamentos sem regra).
+    `decisor_pendente`: (banco, ref_origem) dos lançamentos com pendência aberta sobre eles. A conta não muda; a
+    confiança fica em no máximo 0,70, porque a classificação depende de uma decisão que ainda não foi tomada."""
     checar_contas([r.conta for r in regras] + list(BANCO_CONTA.values()), plano, "regras da classificação")
     linhas, rastro, sem_regra = [], [], []
     for l in lancamentos:
@@ -159,6 +167,9 @@ def classificar(lancamentos: list[dict], plano: dict[str, dict], sugestor: Suges
                 conta, metodo, conf, rid, premissa = "", "HUMANO", Decimal("0"), "SEM_REGRA", False
                 obs = "Nenhuma regra casou com a descrição: classificar à mão."
                 sem_regra.append(l)
+        if (banco, l["ref_origem"]) in decisor_pendente and conf > CONFIANCA_DECISOR_PENDENTE:
+            conf = CONFIANCA_DECISOR_PENDENTE
+            obs = obs + " Decisor pendente: ver pendencias.csv."
         id_saida = f"LC-{l['competencia']}-{banco}-{l['ref_origem']}"
         linhas.append({
             "id_saida": id_saida, "banco": banco, "ref_origem": l["ref_origem"], "data": l["data"], "descricao": desc,

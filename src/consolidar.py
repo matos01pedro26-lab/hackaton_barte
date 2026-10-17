@@ -41,12 +41,33 @@ COL_COMISSOES = ["id_saida", "cnpj", "lojista", "linha_negocio", "comissao_brl"]
 COL_DIVERGENCIAS = ["id_saida", "cnpj", "linha_negocio", "ref_origem", "taxa_contratada_pct", "taxa_aplicada_pct",
                     "diferenca_brl", "classe", "regra_spread", "spread_brl", "base_brl"]
 COL_NOTAS = ["id_saida", "tomador_cnpj", "tomador", "linha_negocio", "valor_brl", "discriminacao"]
-COL_PENDENCIAS = ["id_saida", "tipo", "ref_origem", "valor_brl", "motivo", "quem_decide"]
+COL_PENDENCIAS = ["id_saida", "tipo", "ref_origem", "valor_brl", "motivo", "quem_decide",
+                  "prazo", "data_decisao", "valor_referencia_brl", "base_valor"]       # as 4 últimas são extras (o edital permite)
 COL_RASTRO = ["id_saida", "arquivo_origem", "ref_origem", "valor", "ref_original"]
 
 HELENA = "Helena (financeiro)"
-QUEM_DECIDE = {"Financeiro": HELENA, "Helena/financeiro": HELENA, "Helena": HELENA}      # padroniza; "Comercial" fica
-TIPOS_PONTE = ("CONTESTACAO_PONTE", "SPREAD_NEGATIVO", "CONTESTACAO_ATE_CONTRATO", "DUPLICATA")
+DIEGO = "Diego (comercial)"
+BIA = "Bia (checkout)"
+# quem_decide sempre com uma pessoa. Helena decide o fechamento; o comercial (Diego) decide taxa, condição e contrato;
+# registrar EC ou condição na planilha de taxas é tarefa da Bia, que mantém a planilha (duvidas_financeiro.csv, 20 e 23).
+QUEM_DECIDE = {"Financeiro": HELENA, "Helena/financeiro": HELENA, "Helena": HELENA,
+               "Comercial": DIEGO, "comercial": DIEGO, "Comercial (Diego)": DIEGO}
+QUEM_DECIDE_POR_TIPO = {"CADASTRO_EC": BIA, "CADASTRO_CONDICAO": BIA, "TAXA_A_CONFIRMAR": HELENA}
+TIPOS_PONTE = ("CONTESTACAO_PONTE", "SPREAD_NEGATIVO", "CONTESTACAO_ATE_CONTRATO", "DUPLICATA", "AJUSTE_NAO_RECONHECIDO")
+A_DEFINIR = "A DEFINIR (Helena)"
+# De onde sai o valor_brl de cada tipo de pendência.
+BASE_VALOR = {
+    "EC_RETIDO": "TAXA_ORBE", "CADASTRO_EC": "COMISSAO_CONTRATADA", "CADASTRO_CONDICAO": "REFERENCIA",
+    "DEVOLUCAO_CONDICAO": "TAXA_ORBE", "COMISSAO_NAO_POSITIVA": "COMISSAO_CONTRATADA",
+    "CONTESTACAO_ORBE": "DIVERGENCIA_TAXA", "TAXA_A_CONFIRMAR": "DIFERENCA_DE_TAXA", "SEM_TAXA_CONTRATADA": "BRUTO",
+    "EC_PENDENTE": "BRUTO", "DUPLICATA": "PARTE_TARVO_SPREAD", "SPREAD_NEGATIVO": "SPREAD_RELATORIO",
+    "CONTESTACAO_ATE_CONTRATO": "DIFERENCA_ATE_CONTRATO", "CONTESTACAO_PONTE": "DIVERGENCIA_VALOR_CHEIO",
+    "FORA_COMPETENCIA": "SPREAD_RELATORIO", "AJUSTE_NAO_RECONHECIDO": "SPREAD_RELATORIO",
+    "CADASTRO_AUSENTE": "PARTE_TARVO_SPREAD", "NOTA_NAO_EMITIDA": "PARTICIPACAO_TARVO",
+    "RAZAO_SOCIAL_NOTAS": "VALOR_DAS_NOTAS", "CONTA_GARANTIDA_SEM_ENCARGOS": "REFERENCIA",
+    "LANCAMENTO_SEM_REGRA": "VALOR_EXTRATO", "PIX_SEM_IDENTIFICACAO": "VALOR_EXTRATO", "DEVOLUCAO_PIX": "VALOR_EXTRATO",
+    "PIX_SEM_OPERACAO": "VALOR_EXTRATO", "TRANSFERENCIA_EM_TRANSITO": "VALOR_EXTRATO",
+}
 
 
 def brl(v: Decimal) -> str:
@@ -84,6 +105,38 @@ def prazo_ponte(data_email: date | None = None, dias_uteis: int = 5) -> str:
             f"úteis (até {d:%d/%m}).")
 
 
+def data_limite_ponte(data_email: date | None, dias_uteis: int = 5) -> str:
+    """A mesma conta de prazo_ponte, em AAAA-MM-DD, para a coluna prazo. Sem a data do e-mail, não inventa."""
+    if data_email is None:
+        return A_DEFINIR
+    d, n = data_email, 0
+    while n < dias_uteis:
+        d += timedelta(days=1)
+        n += d.weekday() < 5
+    return d.isoformat()
+
+
+def proximo_mes(mes: str) -> str:
+    ano, mm = map(int, mes.split("-"))
+    return f"{ano + mm // 12}-{mm % 12 + 1:02d}"
+
+
+def completar_pendencia(p: dict, mes: str, data_email: date | None) -> dict:
+    """Colunas extras de pendencias.csv e quem_decide com pessoa. Prazo só com fato: a data do e-mail da Ponte e o
+    fechamento seguinte para a Atlas (duvidas_financeiro.csv, 16); o resto fica a definir pela Helena."""
+    p = dict(p)
+    p["quem_decide"] = QUEM_DECIDE_POR_TIPO.get(p["tipo"], QUEM_DECIDE.get(p["quem_decide"], p["quem_decide"]))
+    if p["tipo"] in TIPOS_PONTE:
+        p.setdefault("prazo", data_limite_ponte(data_email))
+    elif p["tipo"] == "EC_RETIDO":
+        p.setdefault("prazo", f"fechamento de {proximo_mes(mes)}")
+    p.setdefault("prazo", A_DEFINIR)
+    p.setdefault("data_decisao", "")
+    p.setdefault("valor_referencia_brl", "")
+    p.setdefault("base_valor", BASE_VALOR.get(p["tipo"], ""))
+    return p
+
+
 # ----------------------------------------------------------------------------- notas de checkout
 def notas_checkout(comissoes: list[dict], pendencias: list[dict], rastro: list[dict], mes: str) -> tuple[list[dict], list[dict]]:
     """Uma nota por lojista de checkout com comissão positiva. Zero ou negativo não emite (regra da Helena)."""
@@ -96,12 +149,33 @@ def notas_checkout(comissoes: list[dict], pendencias: list[dict], rastro: list[d
         if c["linha_negocio"] != "CHECKOUT" or c["comissao_brl"] <= 0:
             continue
         id_nota = f"NF-CHK-{mes}-{c['cnpj']}"
-        texto = (f"Taxa de processamento de pagamentos (MDR) e de antecipação, competência {mm}/{ano}. "
-                 f"RAZÃO SOCIAL A CONFERIR (nome da planilha de taxas)")
+        texto = f"Taxa de processamento de pagamentos (MDR) e de antecipação, competência {mm}/{ano}."
         notas.append({"id_saida": id_nota, "tomador_cnpj": c["cnpj"], "tomador": c["lojista"],
                       "linha_negocio": "CHECKOUT", "valor_brl": c["comissao_brl"], "discriminacao": texto})
         rastro_notas += [{**r, "id_saida": id_nota, "ref_original": r.get("ref_original", "")} for r in por_id[c["id_saida"]]]
     return notas, rastro_notas
+
+
+def pendencia_razao_social(notas: list[dict], linha_planilha: dict[str, str], mes: str) -> tuple[list[dict], list[dict]]:
+    """A nota de checkout usa como tomador o nome da planilha de taxas. A razão social oficial não está no pacote, então a
+    conferência vira uma pendência só (valor = soma das notas), com uma linha de rastro por nota apontando para a linha
+    da planilha de onde saiu o nome."""
+    chk = [n for n in notas if n["linha_negocio"] == "CHECKOUT"]
+    if not chk:
+        return [], []
+    id_saida = f"PEN-CHK-{mes}-RAZAO_SOCIAL_NOTAS"
+    total = sum((n["valor_brl"] for n in chk), Decimal("0.00"))
+    pend = {"id_saida": id_saida, "tipo": "RAZAO_SOCIAL_NOTAS", "ref_origem": "|".join(n["id_saida"] for n in chk),
+            "valor_brl": total,
+            "motivo": (f"As {len(chk)} notas de checkout usam como tomador o nome da planilha de taxas, com o CNPJ. A razão "
+                       "social oficial não está no pacote de dados. A Helena aceitou o nome da planilha com o CNPJ e disse que a "
+                       "Bia confere na emissão (duvidas_financeiro.csv, resposta 39, item 4); a pendência só fecha com "
+                       "confirmação humana. valor_brl = soma das notas afetadas."),
+            "quem_decide": HELENA}
+    rastro = [{"id_saida": id_saida, "arquivo_origem": "02_tabela_taxas_contratadas.xlsx",
+               "ref_origem": "linha " + linha_planilha.get(n["tomador_cnpj"], "?").replace(" | ", "|"),
+               "valor": n["valor_brl"], "ref_original": n["id_saida"]} for n in chk]
+    return [pend], rastro
 
 
 # ----------------------------------------------------------------------------- ajustes nas pendências dos módulos
@@ -128,6 +202,7 @@ def ajustar_pendencias(pendencias: list[dict], rastro: list[dict], fato_orbe: di
                            f"(R$ {brl(devolucao['valor_brl'])}). Valor que a planilha cobraria (bruto x taxa), só para consulta: "
                            f"R$ {brl(original)}. " + p["motivo"])
             p["valor_brl"] = Decimal("0.00")
+            p["valor_referencia_brl"] = original
             rastro = _trocar_rastro(rastro, p["id_saida"], [{**r, "valor": Decimal("0.00")} for r in linhas])
             avisos.append(f"{p['id_saida']}: valor {original} -> 0.00 (referência da devolução)")
         elif p["tipo"] == "DUPLICATA":
@@ -155,9 +230,13 @@ def ajustar_pendencias(pendencias: list[dict], rastro: list[dict], fato_orbe: di
             rastro = _trocar_rastro(rastro, p["id_saida"],
                                     [{**r, "valor": Decimal(fato_orbe[r["ref_origem"]]["valor_taxa"])} for r in linhas])
             avisos.append(f"{p['id_saida']}: valor {bruto} (bruto) -> {estimada} (taxa estimada)")
+        elif p["tipo"] == "CONTESTACAO_PONTE":
+            p["motivo"] = "A PEDIR À PONTE (valor cheio pago a mais pelo lojista). " + p["motivo"]
+        elif p["tipo"] == "SPREAD_NEGATIVO":
+            p["motivo"] = ("VALOR DO RELATÓRIO (o que aconteceu; não é o valor a pedir, que está na CONTESTACAO_ATE_CONTRATO "
+                           "da mesma operação). " + p["motivo"])
         if p["tipo"] in TIPOS_PONTE:
             p["motivo"] += " " + prazo_ponte(data_email)
-        p["quem_decide"] = QUEM_DECIDE.get(p["quem_decide"], p["quem_decide"])
         saida.append(p)
     return saida, rastro, avisos
 
@@ -175,10 +254,13 @@ def pendencias_bancos(config: list[dict], fato_banco: list[dict], mes: str) -> t
         if c.get("mes") and c["mes"] != mes:      # pendência escrita para uma linha de outro mês: não vale neste
             continue
         ref, banco = c["ref_origem"], c["banco"]
+        referencia = ""
         if ref == "@MENOR_SALDO":
-            linha, valor = menor, Decimal(menor["saldo"])
-            motivo = c["motivo"].format(dias_negativos=sum(1 for v in por_dia.values() if v < 0),
-                                        dias_com_lancamento=len(por_dia), data_menor_saldo=menor["data"])
+            # O saldo não é dinheiro a lançar: vai como referência, e a pendência não soma nada.
+            linha, valor, referencia = menor, Decimal("0.00"), Decimal(menor["saldo"])
+            motivo = "REFERÊNCIA, NÃO SOMAR: " + c["motivo"].format(
+                dias_negativos=sum(1 for v in por_dia.values() if v < 0),
+                dias_com_lancamento=len(por_dia), data_menor_saldo=menor["data"])
             ref = menor["ref_origem"]
         else:
             if (banco, ref) not in por_ref:
@@ -186,11 +268,21 @@ def pendencias_bancos(config: list[dict], fato_banco: list[dict], mes: str) -> t
             linha, valor = por_ref[(banco, ref)], Decimal(por_ref[(banco, ref)]["valor"])
             motivo = c["motivo"].format(valor_fmt=brl(abs(valor)))
         id_saida = f"PEN-BCO-{mes}-{c['tipo']}-{ref}"
-        pendencias.append({"id_saida": id_saida, "tipo": c["tipo"], "ref_origem": ref, "valor_brl": valor,
-                           "motivo": motivo, "quem_decide": c["quem_decide"]})
+        pend = {"id_saida": id_saida, "tipo": c["tipo"], "ref_origem": ref, "valor_brl": valor,
+                "motivo": motivo, "quem_decide": c["quem_decide"]}
+        if referencia != "":
+            pend["valor_referencia_brl"] = referencia
+        pendencias.append(pend)
         rastro.append({"id_saida": id_saida, "arquivo_origem": linha["arquivo_origem"], "ref_origem": ref, "valor": valor,
                        "ref_original": ""})
     return pendencias, rastro
+
+
+def lancamentos_com_decisor_pendente(config: list[dict], mes: str) -> set[tuple[str, str]]:
+    """(banco, ref_origem) dos lançamentos sobre os quais há pendência aberta em config/pendencias_bancos.csv.
+    @MENOR_SALDO fica de fora: a linha do menor saldo só marca o dia; a classificação dela não está em dúvida."""
+    return {(c["banco"], c["ref_origem"]) for c in config
+            if (not c.get("mes") or c["mes"] == mes) and c["ref_origem"] != "@MENOR_SALDO"}
 
 
 def pendencias_sem_regra(sem_regra: list[dict], mes: str) -> tuple[list[dict], list[dict]]:
@@ -233,17 +325,21 @@ def executar(mes: str, dados: Path, checkout: Path, parcial: Path, config: Path,
     data_email = next((date.fromisoformat(c["valor"]) for c in controle if c["fonte"] == "ponte" and c["item"] == "data_email"), None)
     pendencias, rastro, avisos = ajustar_pendencias(chk_pen + rem_pen, rastro, fato_orbe, participacao, data_email)
 
-    # --- notas
+    # --- notas (e a conferência da razão social do tomador, que vira pendência e não texto da nota)
     notas_chk, rastro_notas = notas_checkout(chk_com, pendencias, rastro, mes)
     notas = notas_chk + rem_not
+    linha_planilha = {l["cnpj"]: l["linha_planilha"] for l in ler_csv(dados / "dim_lojista.csv")}
+    pen_rs, ras_rs = pendencia_razao_social(notas_chk, linha_planilha, mes)
 
-    # --- classificação dos extratos e pendências dos bancos
+    # --- pendências dos bancos e classificação dos extratos (lançamento com decisor pendente tem confiança limitada)
+    cfg_bancos = ler_csv(config / "pendencias_bancos.csv")
+    pen_bco, ras_bco = pendencias_bancos(cfg_bancos, fato_banco, mes)
     plano = classificacao.ler_plano(dados / "dim_plano_contas.csv")
-    linhas_lc, rastro_lc, sem_regra = classificacao.classificar(fato_banco, plano)
-    pen_bco, ras_bco = pendencias_bancos(ler_csv(config / "pendencias_bancos.csv"), fato_banco, mes)
+    linhas_lc, rastro_lc, sem_regra = classificacao.classificar(
+        fato_banco, plano, decisor_pendente=lancamentos_com_decisor_pendente(cfg_bancos, mes))
     pen_sr, ras_sr = pendencias_sem_regra(sem_regra, mes)
-    pendencias += pen_bco + pen_sr
-    rastro += rastro_notas + [{**r, "ref_original": ""} for r in rastro_lc] + ras_bco + ras_sr
+    pendencias = [completar_pendencia(p, mes, data_email) for p in pendencias + pen_rs + pen_bco + pen_sr]
+    rastro += rastro_notas + ras_rs + [{**r, "ref_original": ""} for r in rastro_lc] + ras_bco + ras_sr
 
     def ordenar(linhas: list[dict]) -> list[dict]:
         return sorted(linhas, key=lambda l: l["id_saida"])

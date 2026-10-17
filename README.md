@@ -4,7 +4,7 @@ Pipeline que lê o data pack (Orbe, Ponte, extratos Aurora e Meridiano, planilha
 
 ## Como rodar
 
-Python 3.11 ou mais novo. **Não há nada para instalar** (só a biblioteca padrão) e **não há chave de API para configurar**: nenhuma etapa chama IA em execução. A classificação dos extratos é 100% por regra, e as regras vêm do financeiro (`config/` e `HIPOTESES.md`).
+Python 3.11 ou mais novo. **Não há nada para instalar** (só a biblioteca padrão) e **não há chave de API para configurar**: nenhuma etapa chama IA em execução. A classificação dos extratos é 100% por regra; o status de cada regra (confirmada ou premissa) está em `config/registro_decisoes.csv`.
 
 ```
 git clone https://github.com/matos01pedro26-lab/hackaton_barte
@@ -71,29 +71,46 @@ Para uma rodada de teste que não arquiva: `--sem-arquivar`. Para corrigir um m�
 
 ## Saídas (`saida/`)
 
-`comissoes_por_lojista.csv`, `divergencias_taxa.csv`, `notas_a_emitir.csv`, `lancamentos_classificados.csv`, `pendencias.csv`, `rastro.csv`. Separador `;`, decimal com ponto e 2 casas, datas ISO, CNPJ com 14 dígitos. Em `rastro.csv`, a soma por `id_saida` é igual ao valor reportado.
+Os seis arquivos do edital ficam na raiz de `saida/`. Separador `;`, decimal com ponto e 2 casas, datas AAAA-MM-DD, CNPJ com 14 dígitos. Em `rastro.csv`, a soma de `valor` por `id_saida` é igual ao número reportado.
+
+| Arquivo | O que tem |
+|---|---|
+| `comissoes_por_lojista.csv` | Comissão por lojista e linha de negócio (CHECKOUT e REMESSA) |
+| `divergencias_taxa.csv` | Taxa contratada contra aplicada, transação por transação, com o valor em reais |
+| `notas_a_emitir.csv` | Uma nota por lojista de checkout com comissão positiva e uma nota para a Ponte. A discriminação é só serviço e competência |
+| `lancamentos_classificados.csv` | Os dois extratos no plano de contas, com `metodo` e `confianca` |
+| `pendencias.csv` | Tudo que exige uma pessoa. Colunas extras: `prazo`, `data_decisao`, `valor_referencia_brl` (linha de referência, que não soma) e `base_valor` (de onde sai o valor) |
+| `rastro.csv` | Liga cada número às linhas de origem |
+
+`saida/checkouts/` e `saida/parcial/` são saídas intermediárias dos módulos e são mantidas.
 
 ## Classificação dos extratos
 
-Regra primeiro (`src/classificacao.py`, `REGRAS`); IA só onde não há regra, com confiança limitada e só em conta que aceita lançamento. Sem regra e sem sugestão válida: `metodo = HUMANO`, sem conta, e pendência. Todas as contas gravadas aceitam lançamento no plano. Em setembro, os lançamentos saem por regra; a IA não foi acionada.
+Regra primeiro (`src/classificacao.py`, `REGRAS`); IA só onde não há regra, com confiança limitada e só em conta que aceita lançamento. Sem regra e sem sugestão válida: `metodo = HUMANO`, sem conta, e pendência. Em setembro, os 184 lançamentos saem por regra; a IA não foi acionada. Lançamento com pendência aberta sobre ele (L50, L65, MRD2026090425 e L92) tem confiança de no máximo 0,70.
 
-## Limitações e premissas
+## Fontes, decisões e premissas
 
-- Regras vêm do edital e das respostas do time financeiro no Slack. `HIPOTESES.md` e `PLANO.md` são nossos; o que só consta lá é premissa, não regra confirmada.
+- Fontes oficiais: `01_instrucoes_participantes.docx` e as respostas do financeiro no Slack, copiadas em `duvidas_financeiro.csv`. `HIPOTESES.md`, `PLANO.md` e `REGRAS_NEGOCIO.md` são nossos e não são regra confirmada.
+- `config/registro_decisoes.csv` diz, decisão por decisão, se é **CONFIRMADO** (com o número da resposta no CSV) ou **PREMISSA** (sem aprovador).
+- As duas rodadas de perguntas da T-800 estão em `duvidas_financeiro.csv` (respostas #39 e #40). Fluente a 0,79%, juros da conta garantida, razão social das notas e prazo da Ponte têm resposta escrita, mas as pendências só fecham com confirmação humana.
+
+## Limitações conhecidas
+- **Estornos sem origem:** 9 estornos de vendas de agosto não têm a venda original no relatório de setembro (`flag_ref_sem_origem = S` em `data/fato_orbe.csv`). A taxa usada é a da faixa do próprio estorno na data da venda original.
+- **Ajuste da Ponte nunca exercitado com dado real:** setembro não tem linha `AJUSTE REF PC-…`. O tratamento está coberto por testes com linhas sintéticas, inclusive ajuste de mês anterior e observação fora do padrão, que vira pendência `AJUSTE_NAO_RECONHECIDO` em vez de ser descartada.
+- **Texto fiscal da nota:** o tomador das notas de checkout é o nome da planilha de taxas com o CNPJ. A razão social oficial não está no pacote; a emissão depende de a Helena confirmar (pendência `RAZAO_SOCIAL_NOTAS`).
+- **Prazo de contestação da Ponte:** o e-mail de 02/10 dá 5 dias úteis, o que leva a 2026-10-09 (sem feriados). Em 17/10 esse prazo já passou. A contestação só deve ser enviada com a data confirmada por escrito.
+- **Meridiano sem saldo inicial:** a soma do extrato do Meridiano não é conferida contra o saldo; só a do Aurora é.
+- **Condição da Casa em dois arquivos de `config/`** (`condicoes_comerciais.csv` e `condicoes_especiais.csv`), a unificar.
 - Premissas marcadas na coluna `premissa` dos lançamentos: Google Workspace (L48) em 4.2.04 e devolução de PIX (L65) em 2.1.01.001.
-- O extrato do Meridiano não traz saldo inicial, então a soma dele não é conferida contra o saldo; só a do Aurora é.
-- `RAZÃO SOCIAL A CONFERIR`: as notas usam o nome do cadastro; a razão social não foi confirmada.
 - Não há nota para lojista com comissão zero ou negativa (Casa e Atlas): vira pendência.
-- Prazo de contestação da Ponte: a data nas pendências é calculada do e-mail (5 dias úteis, sem feriados) e **está a confirmar com a Helena**.
-- A taxa do Fluente (Pix a 0,79%, contra 0,89% dos demais lojistas) foi **confirmada pela Helena como condição negociada**: não é erro da planilha e não gera pendência.
 - Se faltar uma das seis fontes, o fechamento **não roda parcial**: para, sem gravar nada, e diz o que falta. A Helena prefere fechar o que não depende da fonte que faltou; ainda não fazemos isso.
 - As pendências de banco escritas à mão (`config/pendencias_bancos.csv`) valem só no mês da coluna `mes`. Em outro mês, o fechamento só aponta lançamentos sem regra; as demais pendências de banco do mês novo precisam ser escritas.
 - O que o mês fechado deixa em aberto (por exemplo a Atlas, retida até o comercial confirmar a taxa) é **herdado como pendência** pelo mês seguinte, mas o faturamento retroativo continua dependendo da decisão do comercial.
 
 ## Pendências
 
-Todas estão em `saida/pendencias.csv` com `quem_decide`. Nenhuma linha fica sem decisor. As pendências de banco vêm de `config/pendencias_bancos.csv`.
+Todas estão em `saida/pendencias.csv`, cada uma com uma pessoa em `quem_decide`: Helena (financeiro), Diego (comercial) ou Bia (checkout), quando é tarefa de registrar algo na planilha de taxas. As pendências de banco vêm de `config/pendencias_bancos.csv`.
 
 ## Estrutura
 
-`input/` brutos · `data/` tabelas padronizadas · `config/` regras como dado · `src/` código · `tests/` testes · `PROMPTS/` histórico e `MOMENTOS.md` · `HIPOTESES.md` premissas e perguntas.
+`input/` brutos · `data/` tabelas padronizadas · `config/` regras como dado e `registro_decisoes.csv` · `src/` código · `tests/` testes · `PROMPTS/` histórico das sessões de IA e `MOMENTOS.md` · `HIPOTESES.md` premissas e perguntas · `REGRAS_NEGOCIO.md` catálogo das regras.

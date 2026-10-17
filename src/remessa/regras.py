@@ -11,6 +11,7 @@ Regras vindas do financeiro (canal #tarvo-financeiro):
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
@@ -28,6 +29,12 @@ class Classe(str, Enum):
     DUPLICATA = "DUPLICATA"
     JA_FATURADA = "JA_FATURADA"
     FORA_COMPETENCIA = "FORA_COMPETENCIA"
+    AJUSTE_NAO_RECONHECIDO = "AJUSTE_NAO_RECONHECIDO"
+
+
+# Observação que fala em ajuste mas não segue o padrão confirmado ("AJUSTE REF PC-..."): não dá para saber qual
+# operação ela ajusta, então não entra na comissão e vira pendência, qualquer que seja a data.
+PARECE_AJUSTE = re.compile(r"\bajuste\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -54,6 +61,8 @@ def classificar(op: Operacao, mes: str, cfg: Config, faturadas: frozenset[str] =
     # Operação contratada num mês e liquidada no seguinte pode reaparecer no relatório: já foi faturada, conta uma vez.
     if op.num_op in faturadas:
         return OpClassificada(op, Classe.JA_FATURADA)
+    if PARECE_AJUSTE.search(op.observacao):
+        return OpClassificada(op, Classe.AJUSTE_NAO_RECONHECIDO)
     if not op.data_contratacao.startswith(mes):
         return OpClassificada(op, Classe.FORA_COMPETENCIA)
     if op.spread_brl < 0:

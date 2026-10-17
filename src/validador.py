@@ -38,7 +38,9 @@ OBRIGATORIAS = {
 }
 VALOR = {"comissoes_por_lojista": "comissao_brl", "divergencias_taxa": "diferenca_brl", "notas_a_emitir": "valor_brl",
          "lancamentos_classificados": "valor", "pendencias": "valor_brl"}
-DINHEIRO = {"comissao_brl", "diferenca_brl", "valor_brl", "valor", "spread_brl", "base_brl"}
+DINHEIRO = {"comissao_brl", "diferenca_brl", "valor_brl", "valor", "spread_brl", "base_brl", "valor_referencia_brl"}
+DATA_OU_TEXTO = {"prazo", "data_decisao"}          # data, se for data, em AAAA-MM-DD; texto livre é permitido no prazo
+DECISOR_SEM_PESSOA = {"financeiro", "comercial", "tesouraria", ""}
 CNPJ = {"cnpj", "tomador_cnpj"}
 RE_DINHEIRO = re.compile(r"^-?\d+\.\d{2}$")
 RE_PCT = re.compile(r"^-?\d+(\.\d+)?$")
@@ -80,6 +82,12 @@ def validar(saidas: dict, plano: dict | None = None) -> list[str]:
                     erros.append(f"{nome} {l['id_saida']}: {col}='{s}' fora de {sorted(ENUMS[col])}")
                 elif col == "confianca" and not (Decimal("0") <= D(s) <= Decimal("1")):
                     erros.append(f"{nome} {l['id_saida']}: confianca={s} fora de 0 a 1")
+                elif col in DATA_OU_TEXTO and s[:1].isdigit() and not RE_DATA.match(s):
+                    erros.append(f"{nome} {l['id_saida']}: {col}='{s}' fora de AAAA-MM-DD")
+                elif col == "data_decisao" and s and not RE_DATA.match(s):
+                    erros.append(f"{nome} {l['id_saida']}: data_decisao='{s}' fora de AAAA-MM-DD")
+                elif col == "quem_decide" and s.strip().lower() in DECISOR_SEM_PESSOA:
+                    erros.append(f"{nome} {l['id_saida']}: quem_decide='{s}' sem pessoa")
 
     # 2. ids únicos
     donos: dict[str, str] = {}
