@@ -13,6 +13,7 @@ class Config:
     participacao_tarvo: Decimal
     spread_padrao_pct: Decimal
     tolerancia_brl: Decimal
+    tolerancia_pp: Decimal
     padrao_ajuste: re.Pattern
     quem_decide: dict[str, str]
 
@@ -23,6 +24,7 @@ def carregar_config(caminho: Path) -> Config:
         participacao_tarvo=Decimal(bruto["participacao_tarvo"]),
         spread_padrao_pct=Decimal(bruto["spread_padrao_pct"]),
         tolerancia_brl=Decimal(bruto["tolerancia_brl"]),
+        tolerancia_pp=Decimal(bruto.get("tolerancia_pp", "0")),
         padrao_ajuste=re.compile(bruto["padrao_ajuste"], re.IGNORECASE),
         quem_decide=dict(bruto["quem_decide"]),
     )

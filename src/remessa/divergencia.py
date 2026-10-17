@@ -1,7 +1,9 @@
 """Divergência de spread: o spread que a Ponte aplicou contra o spread contratado.
 
 diferenca = Spread R$ da Ponte - (spread contratado % x Valor ME x PTAX), valor cheio (quem pagou a mais foi o lojista).
-Só reporta quando |diferenca| passa da tolerância da configuração (começa em zero; o estudo exploratório decide o valor).
+Só reporta quando a diferença passa das DUAS tolerâncias da configuração: em reais (tolerancia_brl) e em pontos
+percentuais de spread (tolerancia_pp). Dentro de qualquer uma delas é ruído de arredondamento da Ponte.
+Ambas começam em zero; o estudo exploratório (notebooks/remessa_tolerancia.ipynb) decide o valor.
 """
 from __future__ import annotations
 
@@ -22,6 +24,15 @@ class Diferenca:
     regra: str
     base_brl: Decimal
     diferenca_brl: Decimal
+
+    @property
+    def desvio_pp(self) -> Decimal:
+        """Spread aplicado menos contratado, em pontos percentuais, sobre a base Valor ME x PTAX."""
+        return self.classificada.op.spread_brl / self.base_brl * 100 - self.contratado_pct
+
+
+def acima_da_tolerancia(d: Diferenca, cfg: Config) -> bool:
+    return abs(d.diferenca_brl) > cfg.tolerancia_brl and abs(d.desvio_pp) > cfg.tolerancia_pp
 
 
 def calcular_diferencas(classificadas: list[OpClassificada], por_cnpj: dict[str, list[Contrato]],
@@ -46,7 +57,7 @@ def divergencias(diferencas: list[Diferenca], cfg: Config) -> tuple[list[dict], 
     """Linhas de divergencias_taxa (parcial) e rastro. id_saida = Nº da operação."""
     linhas, rastro = [], []
     for d in diferencas:
-        if abs(d.diferenca_brl) <= cfg.tolerancia_brl:
+        if not acima_da_tolerancia(d, cfg):
             continue
         op = d.classificada.op
         aplicada = op.spread_pct if op.spread_pct is not None else op.spread_brl / d.base_brl * 100

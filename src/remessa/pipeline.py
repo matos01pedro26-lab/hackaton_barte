@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .comissao import calcular_comissoes
 from .config import carregar_config
-from .divergencia import calcular_diferencas, divergencias
+from .divergencia import acima_da_tolerancia, calcular_diferencas, divergencias
 from .leitura import ler_contratos, ler_nomes_lojistas, ler_operacoes
 from .pendencias import montar_pendencias
 from .regras import Classe, classificar, indexar_contratos
@@ -26,7 +26,7 @@ def executar(mes: str, dados: Path, saida: Path, config: Path) -> dict[str, int]
 
     diferencas, sem_contrato = calcular_diferencas(classificadas, contratos, cfg)
     linhas_div, rastro_div = divergencias(diferencas, cfg)
-    divergentes = [d for d in diferencas if abs(d.diferenca_brl) > cfg.tolerancia_brl]
+    divergentes = [d for d in diferencas if acima_da_tolerancia(d, cfg)]
 
     pendencias, rastro_pend = montar_pendencias(classificadas, diferencas, divergentes, sem_contrato,
                                                 comissao_por_op, total, mes, cfg)
@@ -39,6 +39,7 @@ def executar(mes: str, dados: Path, saida: Path, config: Path) -> dict[str, int]
               *({"item": f"operacoes_{k.value.lower()}", "valor": por_classe.get(k, 0)} for k in Classe),
               {"item": "total_participacao_brl", "valor": total},
               {"item": "tolerancia_brl", "valor": cfg.tolerancia_brl},
+              {"item": "tolerancia_pp", "valor": cfg.tolerancia_pp},
               {"item": "divergencias_reportadas", "valor": len(linhas_div)},
               {"item": "pendencias", "valor": len(pendencias)}]
     return gravar(saida, comissoes, linhas_div, pendencias, rastro, resumo)

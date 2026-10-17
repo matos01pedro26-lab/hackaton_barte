@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
 
@@ -103,6 +104,22 @@ class Divergencia(unittest.TestCase):
         dif, _ = calcular_diferencas([classificar(op(spread="75.01"), "2026-09", CFG)], por_cnpj, CFG)
         linhas, _ = divergencias(dif, CFG)
         self.assertEqual(len(linhas), 1)
+
+    def test_tolerancia_em_pp_ignora_ruido_e_mantem_divergencia_real(self):
+        por_cnpj = indexar_contratos([contrato(pct="1.5")])
+        cfg = replace(CFG, tolerancia_pp=D("0.005"))
+        ruido = classificar(op(num="R", spread="75.30"), "2026-09", CFG)   # +0,006 p.p. sobre base 5000 -> acima
+        micro = classificar(op(num="M", spread="75.20"), "2026-09", CFG)   # +0,004 p.p. -> dentro do ruido
+        real = classificar(op(num="V", spread="150"), "2026-09", CFG)      # +1,5 p.p.
+        dif, _ = calcular_diferencas([ruido, micro, real], por_cnpj, cfg)
+        linhas, _ = divergencias(dif, cfg)
+        self.assertEqual({l["ref_origem"] for l in linhas}, {"R", "V"})
+
+    def test_tolerancia_vale_so_quando_ultrapassa_as_duas(self):
+        por_cnpj = indexar_contratos([contrato(pct="1.5")])
+        cfg = replace(CFG, tolerancia_brl=D("100"))   # diferença de 75 fica dentro da tolerância em reais
+        dif, _ = calcular_diferencas([classificar(op(spread="150"), "2026-09", CFG)], por_cnpj, cfg)
+        self.assertEqual(divergencias(dif, cfg)[0], [])
 
     def test_sem_contrato_vigente_vai_para_cadastro(self):
         dif, sem = calcular_diferencas([classificar(op(), "2026-09", CFG)], {}, CFG)
