@@ -287,6 +287,11 @@ def ler_ponte(caminho: Path, ctl: Controle) -> tuple[list[dict], str]:
             totais["spread"] = num_ponto(cel.get((r, "B"), ""))
     ctl.add("ARQUIVO", "ponte", "arquivo", caminho.name, f"anexo={nome_anexo}; aba={nome_aba}")
     ctl.add("ARQUIVO", "ponte", "sha256", sha256(caminho))
+    try:
+        ctl.add("ARQUIVO", "ponte", "data_email", email.utils.parsedate_to_datetime(msg["Date"]).date().isoformat(),
+                "cabeçalho Date do e-mail; o prazo de contestação da Ponte conta a partir dele")
+    except (TypeError, ValueError):
+        pass          # e-mail sem Date legível: o prazo fica sem data
     ctl.add("CONTAGEM", "ponte", "linhas_lidas", len(ops))
     if "ops" in totais:
         ctl.add("CONTAGEM", "ponte", "total_declarado_operacoes", totais["ops"])

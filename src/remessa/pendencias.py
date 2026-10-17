@@ -93,4 +93,10 @@ def montar_pendencias(classificadas: list[OpClassificada], diferencas: list[Dife
         pend.append(_pendencia(id_saida, "NOTA_NAO_EMITIDA", [id_nota(mes, cfg.tomador_cnpj)], total_participacao,
                                "Participação do mês zerada ou negativa: não emite nota e o saldo não passa para o mês seguinte.",
                                cfg.quem_decide["nota"]))
+        elegiveis = [c for c in classificadas if c.classe in ELEGIVEIS]
+        if elegiveis:       # o saldo que não vira nota é a soma dessas operações (ajustes abatendo, por exemplo)
+            rastro.extend(_rastro(id_saida, c, comissao_por_op[c.op.num_op]) for c in elegiveis)
+        else:               # mês sem nenhuma operação elegível: uma linha explicando, para o rastro fechar em zero
+            rastro.append({"id_saida": id_saida, "arquivo_origem": "(nenhuma operação elegível no mês)",
+                           "ref_origem": id_nota(mes, cfg.tomador_cnpj), "valor": Decimal("0.00"), "ref_original": ""})
     return pend, rastro

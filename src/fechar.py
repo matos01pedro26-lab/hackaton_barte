@@ -16,7 +16,7 @@ import io
 import re
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from decimal import Decimal
 from pathlib import Path
 
@@ -43,6 +43,10 @@ class EntradaIncompleta(Exception):
     """Falta ao menos uma fonte obrigatória do mês."""
 
 
+class CompetenciaDivergente(ValueError):
+    """As datas dos arquivos não são do mês pedido (a ingestão carimba o mês pedido em todas as linhas, sem olhar as datas)."""
+
+
 def brl(v) -> str:
     """Decimal -> 'R$ 1.234,56' (formato de leitura; os arquivos continuam com ponto decimal)."""
     d = Decimal(str(v)).quantize(Decimal("0.01"))
@@ -66,6 +70,23 @@ def conferir_entrada(entrada: Path) -> tuple[list[str], list[str]]:
     faltam = [f"{prefixo}*{ext}  ({nome})" for prefixo, ext, nome in FONTES
               if not any(n.startswith(prefixo) and n.endswith(ext) for n in presentes)]
     return faltam, presentes
+
+
+def conferir_competencia(dados: Path, mes: str) -> None:
+    """Para se a maioria das linhas de uma fonte tiver data de outro mês: calcular assim seria errado e ninguém perceberia."""
+    fontes = [("fato_orbe.csv", "data_movimento", "relatório da Orbe"), ("fato_ponte.csv", "data_contratacao", "relatório da Ponte"),
+              ("fato_banco.csv", "data", "extratos bancários")]
+    problemas = []
+    for arquivo, coluna, nome in fontes:
+        linhas = _csv(Path(dados) / arquivo)
+        if not linhas:
+            continue
+        dentro = sum(1 for l in linhas if l[coluna].startswith(mes))
+        if dentro / len(linhas) < 0.5:
+            principal, _ = Counter(l[coluna][:7] for l in linhas).most_common(1)[0]
+            problemas.append(f"{nome}: só {dentro} de {len(linhas)} linhas são de {mes}; a maioria é de {principal}")
+    if problemas:
+        raise CompetenciaDivergente(f"Os arquivos não parecem ser de {mes}. Confira a competência ou os arquivos:\n  - " + "\n  - ".join(problemas))
 
 
 def _capturar(funcao, *args, **kwargs):
@@ -94,6 +115,7 @@ def fechar(mes: str, entrada: Path, dados: Path, saida: Path, config: Path) -> d
         return resultado
 
     etapa("Ingestão dos arquivos", ingestao.executar, mes, entrada, dados)
+    conferir_competencia(dados, mes)
     etapa("Comissão de checkout", checkouts_cli.executar, mes, dados, config, saida / "checkouts")
     etapa("Comissão de remessa", remessa_pipeline.executar, mes, dados, saida / "parcial", config / "remessa.json")
     etapa("Consolidação (seis arquivos)", consolidar.executar, mes, dados, saida / "checkouts", saida / "parcial", config, saida)

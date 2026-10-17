@@ -40,6 +40,15 @@ class ComandoUnico(unittest.TestCase):
                 fechar.fechar("2026-09", tmp / "vazia", tmp / "d", tmp / "s", RAIZ / "config")
             self.assertIn("01_orbe", str(e.exception))
 
+    def test_mes_que_nao_bate_com_as_datas_dos_arquivos_para_com_aviso(self):
+        """Pedir outubro com arquivos de setembro não pode calcular em silêncio."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            with self.assertRaises(fechar.CompetenciaDivergente) as e:
+                fechar.fechar("2026-10", INPUT, tmp / "data", tmp / "saida", RAIZ / "config")
+        self.assertIn("2026-09", str(e.exception))
+        self.assertIn("2026-10", str(e.exception))
+
     def test_infere_o_mes_pelos_nomes(self):
         self.assertEqual(fechar.inferir_mes(["01_orbe_relatorio_comissoes_set2026.csv", "06_orbe_ajustes_tardios_set2026.csv"]), "2026-09")
         self.assertEqual(fechar.inferir_mes(["01_orbe_out2026.csv"]), "2026-10")
@@ -119,6 +128,11 @@ class Tela(unittest.TestCase):
         status, r = self.rodar({"mes": "2026-09", "origem": "upload"}, arquivos)
         self.assertEqual(status, 422)
         self.assertTrue(any("03_email_ponte" in f for f in r["faltam"]), r)
+
+    def test_competencia_errada_na_tela_avisa_e_nao_calcula(self):
+        status, r = self.rodar({"mes": "2026-10", "origem": "exemplo"})
+        self.assertEqual(status, 422)
+        self.assertIn("não parecem ser de 2026-10", r["erro"])
 
     def test_mes_invalido(self):
         status, r = self.rodar({"mes": "setembro", "origem": "exemplo"})

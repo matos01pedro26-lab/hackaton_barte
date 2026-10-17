@@ -218,6 +218,18 @@ class AjusteNoFechamento(unittest.TestCase):
         self.assertEqual((linha["valor"], linha["ref_original"]), ("-50.00", "PC-0826-0042"))
 
 
+class MesSemOperacoes(unittest.TestCase):
+    def test_participacao_zerada_nao_emite_nota_e_o_rastro_fecha(self):
+        """Outubro com os dados de setembro: nenhuma operação é do mês. Não emite nota, abre pendência e o rastro fecha em zero."""
+        import csv
+        with tempfile.TemporaryDirectory() as tmp:
+            executar("2026-10", RAIZ / "data", Path(tmp), RAIZ / "config" / "remessa.json")
+            pend = list(csv.DictReader((Path(tmp) / "remessa_pendencias.csv").read_text(encoding="utf-8").splitlines(), delimiter=";"))
+            notas = (Path(tmp) / "remessa_notas.csv").read_text(encoding="utf-8").strip().splitlines()
+        self.assertEqual(len(notas), 1)                                      # só o cabeçalho: nenhuma nota
+        self.assertIn("NOTA_NAO_EMITIDA", {p["tipo"] for p in pend})
+
+
 class PontaAPonta(unittest.TestCase):
     def test_setembro_fecha_com_o_valor_conferido(self):
         with tempfile.TemporaryDirectory() as tmp:

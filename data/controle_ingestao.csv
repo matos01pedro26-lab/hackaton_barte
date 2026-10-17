@@ -15,6 +15,7 @@ CONTAGEM;tabela_taxas;linhas_lidas;25;
 CONTAGEM;tabela_taxas;comentarios_de_celula;1;
 ARQUIVO;ponte;arquivo;03_email_ponte_cambio_relatorio_set2026.eml;"anexo=PonteCambio_Relatorio_TARVO_092026.xlsx; aba=Operações"
 ARQUIVO;ponte;sha256;f0a86efce698e37811815335429565b85ae12c6536c2c939019d0e756710939d;
+ARQUIVO;ponte;data_email;2026-10-02;"cabeçalho Date do e-mail; o prazo de contestação da Ponte conta a partir dele"
 CONTAGEM;ponte;linhas_lidas;233;
 CONTAGEM;ponte;total_declarado_operacoes;233;
 CONTAGEM;ponte;total_declarado_spread_brl;78073.59;

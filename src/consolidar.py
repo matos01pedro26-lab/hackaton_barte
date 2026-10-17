@@ -71,8 +71,11 @@ def decimais(linhas: list[dict], *campos: str) -> list[dict]:
     return [{**l, **{c: Decimal(l[c]) for c in campos}} for l in linhas]
 
 
-def prazo_ponte(data_email: date = date(2026, 10, 2), dias_uteis: int = 5) -> str:
-    """Prazo de contestação que o e-mail da Ponte dá (Date: 02/10/2026; 5 dias úteis). Feriado não é considerado."""
+def prazo_ponte(data_email: date | None = None, dias_uteis: int = 5) -> str:
+    """Prazo de contestação que o e-mail da Ponte dá (5 dias úteis a contar da data do e-mail). Feriado não é considerado.
+    A data vem do próprio e-mail do mês (controle_ingestao); sem ela, só avisa que o prazo é a confirmar."""
+    if data_email is None:
+        return f"Prazo da contestação a confirmar com a Helena: o e-mail da Ponte dá {dias_uteis} dias úteis, contados da data dele."
     d, n = data_email, 0
     while n < dias_uteis:
         d += timedelta(days=1)
@@ -113,7 +116,7 @@ def _trocar_rastro(rastro: list[dict], id_saida: str, novas: list[dict]) -> list
 
 
 def ajustar_pendencias(pendencias: list[dict], rastro: list[dict], fato_orbe: dict[str, dict],
-                       participacao_tarvo: Decimal) -> tuple[list[dict], list[dict], list[str]]:
+                       participacao_tarvo: Decimal, data_email: date | None = None) -> tuple[list[dict], list[dict], list[str]]:
     """Correções pedidas na consolidação. Devolve (pendências, rastro, avisos do que foi feito)."""
     avisos: list[str] = []
     por_tipo = {}
@@ -159,7 +162,7 @@ def ajustar_pendencias(pendencias: list[dict], rastro: list[dict], fato_orbe: di
                                     [{**r, "valor": Decimal(fato_orbe[r["ref_origem"]]["valor_taxa"])} for r in linhas])
             avisos.append(f"{p['id_saida']}: valor {bruto} (bruto) -> {estimada} (taxa estimada)")
         if p["tipo"] in TIPOS_PONTE:
-            p["motivo"] += " " + prazo_ponte()
+            p["motivo"] += " " + prazo_ponte(data_email)
         p["quem_decide"] = QUEM_DECIDE.get(p["quem_decide"], p["quem_decide"])
         saida.append(p)
     return saida, rastro, avisos
@@ -175,6 +178,8 @@ def pendencias_bancos(config: list[dict], fato_banco: list[dict], mes: str) -> t
     menor = min(aurora, key=lambda l: Decimal(l["saldo"]))
     pendencias, rastro = [], []
     for c in config:
+        if c.get("mes") and c["mes"] != mes:      # pendência escrita para uma linha de outro mês: não vale neste
+            continue
         ref, banco = c["ref_origem"], c["banco"]
         if ref == "@MENOR_SALDO":
             linha, valor = menor, Decimal(menor["saldo"])
@@ -230,7 +235,9 @@ def executar(mes: str, dados: Path, checkout: Path, parcial: Path, config: Path,
     rastro = [{**r, "ref_original": r.get("ref_original", "")} for r in chk_ras + rem_ras]
 
     # --- pendências dos módulos, com as correções pedidas
-    pendencias, rastro, avisos = ajustar_pendencias(chk_pen + rem_pen, rastro, fato_orbe, participacao)
+    controle = classificacao.ler_controle(dados / "controle_ingestao.csv")
+    data_email = next((date.fromisoformat(c["valor"]) for c in controle if c["fonte"] == "ponte" and c["item"] == "data_email"), None)
+    pendencias, rastro, avisos = ajustar_pendencias(chk_pen + rem_pen, rastro, fato_orbe, participacao, data_email)
 
     # --- notas
     notas_chk, rastro_notas = notas_checkout(chk_com, pendencias, rastro, mes)
