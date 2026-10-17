@@ -23,6 +23,7 @@ import io
 import re
 import sys
 from collections import Counter, defaultdict
+from datetime import date, timedelta
 from decimal import Decimal, ROUND_DOWN
 from email import policy
 from pathlib import Path
@@ -34,11 +35,13 @@ from .utils import (achar_arquivo, cnpj14, data_br, data_serial_excel, ec_texto,
 COL_DIM_LOJISTA = ["lojista_id", "cnpj", "cnpj_ajustado", "nome_canonico", "nomes_alternativos", "ecs", "ativo",
                    "linha_checkout", "linha_remessa", "status_cadastro", "obs_tabela", "linha_planilha"]
 COL_DIM_EC = ["ec", "status", "faturavel", "lojista_id", "cnpj", "nome_tabela", "nomes_orbe", "n_linhas_orbe",
-              "fonte_mapeamento", "sugestao_cnpj", "sugestao_nome_tabela", "observacao"]
-COL_DIM_CONTRATO = ["lojista_id", "cnpj", "cnpj_ajustado", "ec", "nome_tabela", "vigencia_ini", "vigencia_fim", "taxa_debito_pct",
-                    "taxa_credito_vista_pct", "taxa_credito_2_6x_pct", "taxa_credito_7_12x_pct", "taxa_pix_pct",
-                    "taxa_antecipacao_pct", "spread_remessa_pct", "spread_remessa_regra", "pct_em_texto", "obs",
-                    "comentario_celula", "linha_planilha"]
+              "visto_na_orbe", "fonte_mapeamento", "aprovado_por", "registrado_em", "sugestao_cnpj", "sugestao_nome_tabela",
+              "observacao"]
+COL_DIM_CONTRATO = ["lojista_id", "cnpj", "cnpj_ajustado", "ec", "ec_fonte", "nome_tabela", "vigencia_ini",
+                    "vigencia_fim", "taxa_debito_pct", "taxa_credito_vista_pct", "taxa_credito_2_6x_pct",
+                    "taxa_credito_7_12x_pct", "taxa_pix_pct", "taxa_antecipacao_pct", "spread_remessa_pct",
+                    "spread_remessa_regra", "spread_remessa_efetivo_pct", "origem_condicao", "condicao_fonte",
+                    "condicao_aprovada_por", "pct_em_texto", "obs", "comentario_celula", "linha_planilha"]
 COL_DIM_PLANO = ["cod_conta", "descricao", "tipo", "natureza", "aceita_lancamento", "cod_superior", "nivel",
                  "dt_criacao"]
 COL_FATO_ORBE = ["competencia", "arquivo_origem", "linha_origem", "id_transacao", "data_movimento", "ec",
@@ -48,9 +51,12 @@ COL_FATO_ORBE = ["competencia", "arquivo_origem", "linha_origem", "id_transacao"
 COL_FATO_PONTE = ["competencia", "arquivo_origem", "linha_origem", "num_op", "data_contratacao", "data_liquidacao",
                   "cnpj", "cnpj_ajustado", "cliente_nome", "moeda", "valor_me", "taxa_cliente", "ptax", "valor_brl",
                   "spread_brl", "spread_pct", "spread_estimado_brl", "iof_brl", "status_compliance", "observacao",
-                  "flag_duplicata", "flag_spread_negativo", "flag_ressalva"]
+                  "flag_duplicata", "flag_spread_negativo", "flag_ressalva", "mes_contratacao",
+                  "flag_liquidacao_mes_seguinte", "spread_contratado_pct", "flag_spread_diverge",
+                  "flag_cnpj_fora_da_tabela"]
 COL_FATO_BANCO = ["competencia", "banco", "ref_origem", "arquivo_origem", "linha_origem", "data", "descricao",
-                  "documento", "valor", "sentido", "saldo", "tipo_lancamento", "contraparte", "contraparte_cnpj"]
+                  "documento", "valor", "sentido", "saldo", "tipo_lancamento", "contraparte", "contraparte_cnpj",
+                  "competencia_declarada", "provisionado_antes"]
 COL_CONTROLE = ["tipo", "fonte", "item", "valor", "detalhe"]
 
 ORBE_COLUNAS = ["id_transacao", "data_movimento", "cod_estabelecimento", "nome_estabelecimento", "tipo_lancamento",
@@ -167,6 +173,8 @@ def ler_tabela_taxas(caminho: Path, ctl: Controle) -> list[dict]:
             "spread_remessa_pct": spread, "spread_remessa_regra": "EXPLICITO" if spread is not None else "PADRAO",
             "pct_em_texto": any("%" in t for t in taxas_brutas), "obs": g("obs"),
             "comentario_celula": " | ".join(coment.get(r, [])), "linha_planilha": r,
+            "ec_fonte": "TABELA" if ec_texto(g("ecorbe")) else "", "origem_condicao": "TABELA",
+            "condicao_fonte": "", "condicao_aprovada_por": "",
         })
     ctl.add("ARQUIVO", "tabela_taxas", "arquivo", caminho.name, f"aba={nome_aba}; abas ignoradas="
             f"{[n for n in abas if n != nome_aba]}")
@@ -359,12 +367,91 @@ def ler_meridiano(caminho: Path, competencia: str, ctl: Controle) -> list[dict]:
 
 
 # ----------------------------------------------------------------------------- construção das dimensões
-def ler_overrides(caminho: Path) -> dict[str, dict]:
+CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
+TAXAS_COLS = ["taxa_debito_pct", "taxa_credito_vista_pct", "taxa_credito_2_6x_pct", "taxa_credito_7_12x_pct",
+              "taxa_pix_pct", "taxa_antecipacao_pct"]
+
+
+def ler_config(nome: str) -> list[dict]:
+    """Lê um CSV de config/ (decisões confirmadas pelo financeiro, com fonte e quem aprovou)."""
+    caminho = CONFIG_DIR / nome
     if not caminho.exists():
-        return {}
+        return []
     texto, _ = ler_texto(caminho)
-    return {ec_texto(r["ec"]): {k: (v or "").strip() for k, v in r.items()}
-            for r in csv.DictReader(io.StringIO(texto), delimiter=";") if (r.get("ec") or "").strip()}
+    linhas = []
+    for r in csv.DictReader(io.StringIO(texto), delimiter=";"):
+        if None in r:
+            raise ValueError(f"config/{nome}: linha com campos a mais (algum texto tem ';'): {list(r.values())[:2]}")
+        linhas.append({k: (v or "").strip() for k, v in r.items()})
+    return linhas
+
+
+def ler_overrides() -> dict[str, dict]:
+    return {ec_texto(r["ec"]): r for r in ler_config("mapeamento_ec.csv") if r.get("ec")}
+
+
+def ler_parametros() -> dict[str, float]:
+    params = {r["chave"]: float(r["valor"].replace(",", ".")) for r in ler_config("parametros.csv") if r.get("chave")}
+    for obrigatorio in ("spread_padrao_pct", "tolerancia_spread_pp"):
+        if obrigatorio not in params:
+            raise ValueError(f"config/parametros.csv sem a chave obrigatória '{obrigatorio}'")
+    return params
+
+
+def dia_vizinho(iso: str, delta: int) -> str:
+    return (date.fromisoformat(iso) + timedelta(days=delta)).isoformat()
+
+
+def vincular_ecs(contratos: list[dict], overrides: dict[str, dict]) -> int:
+    """EC confirmado pelo financeiro: preenche o EC nas linhas da tabela que têm o mesmo CNPJ e estão sem EC."""
+    n = 0
+    for ec, ov in overrides.items():
+        if ov.get("status", "").upper() != "CONFIRMADO" or not ov.get("cnpj"):
+            continue
+        cnpj = cnpj14(ov["cnpj"])[0]
+        for c in contratos:
+            if c["cnpj"] == cnpj and not c["ec"]:
+                c["ec"], c["ec_fonte"] = ec, "CONFIRMADO_FINANCEIRO"
+                n += 1
+    return n
+
+
+def aplicar_condicoes(contratos: list[dict], condicoes: list[dict], ctl: Controle) -> list[dict]:
+    """Condição comercial com vigência (ex.: tarifa zerada de set a dez) vira uma linha nova em dim_contrato_taxa.
+    A linha base é encerrada na véspera e, se a condição tem fim, a base é retomada no dia seguinte."""
+    saida = list(contratos)
+    for cond in condicoes:
+        cnpj = cnpj14(cond["cnpj"])[0]
+        ini, fim = cond["vigencia_ini"], cond["vigencia_fim"]
+        vigentes = [c for c in saida if c["cnpj"] == cnpj
+                    and (not c["vigencia_ini"] or c["vigencia_ini"] <= ini)
+                    and (not c["vigencia_fim"] or c["vigencia_fim"] >= ini)]
+        if not vigentes:
+            ctl.verifica("condicoes_comerciais", f"{cnpj}_tem_linha_base_em_{ini}", False,
+                         "nenhuma linha de contrato vigente nessa data; condição ignorada")
+            continue
+        base = vigentes[-1]
+        fim_base = base["vigencia_fim"]
+        nova = dict(base)
+        for col in TAXAS_COLS + ["spread_remessa_pct"]:
+            if cond.get(col, "") != "":
+                nova[col] = float(cond[col].replace(",", "."))
+        nova.update(vigencia_ini=ini, vigencia_fim=fim, origem_condicao="CONFIG",
+                    condicao_fonte=cond.get("fonte", ""), condicao_aprovada_por=cond.get("aprovado_por", ""))
+        if nova["spread_remessa_pct"] is not None:
+            nova["spread_remessa_regra"] = "EXPLICITO"
+        retomada = None
+        if fim and (not fim_base or fim_base > fim):
+            retomada = dict(base)
+            retomada.update(vigencia_ini=dia_vizinho(fim, 1), vigencia_fim=fim_base, origem_condicao="TABELA (retomada)")
+        base["vigencia_fim"] = dia_vizinho(ini, -1)
+        saida.append(nova)
+        if retomada:
+            saida.append(retomada)
+        ctl.add("REGRA", "condicoes_comerciais", f"{cnpj} de {ini} a {fim or 'sem fim'}",
+                ", ".join(f"{c}={nova[c]}" for c in TAXAS_COLS if cond.get(c, "") != ""),
+                f"{cond.get('fonte', '')} | aprovado por {cond.get('aprovado_por', '')} em {cond.get('registrado_em', '')}")
+    return saida
 
 
 def contem_nome(a: str, b: str) -> bool:
@@ -387,13 +474,17 @@ def construir_dim_ec(orbe: list[dict], contratos: list[dict], overrides: dict[st
             contratos_por_ec[c["ec"]].append(c)
     sem_ec = [c for c in contratos if not c["ec"]]
 
+    # A dimensão é a UNIÃO de tudo o que se sabe sobre ECs: vistos na Orbe do mês, presentes na tabela de taxas e
+    # citados em config/mapeamento_ec.csv. Um EC confirmado não some só porque não vendeu no mês.
+    universo = set(n_linhas) | set(contratos_por_ec) | set(overrides)
+
     linhas = []
-    for ec in sorted(n_linhas):
+    for ec in sorted(universo):
         ov = overrides.get(ec)
-        sugestao_cnpj, sugestao_nome, obs = "", "", ""
+        sugestao_cnpj, sugestao_nome, obs, aprovado, registrado = "", "", "", "", ""
         if ov and ov.get("status"):
             status, cnpj, fonte = ov["status"].upper(), cnpj14(ov.get("cnpj", ""))[0], "config/mapeamento_ec.csv"
-            obs = ov.get("fonte", "")
+            obs, aprovado, registrado = ov.get("fonte", ""), ov.get("aprovado_por", ""), ov.get("registrado_em", "")
         elif ec in contratos_por_ec:
             status, cnpj, fonte = "CONFIRMADO", contratos_por_ec[ec][0]["cnpj"], "tabela_taxas"
         else:
@@ -408,15 +499,61 @@ def construir_dim_ec(orbe: list[dict], contratos: list[dict], overrides: dict[st
                 sugestao_cnpj, sugestao_nome = next(iter(cands.items()))
                 obs = (obs + "; " if obs else "") + "sugestao por nome, NAO confirmada, nao usada em joins"
         nome_tabela = contratos_por_ec[ec][0]["nome_tabela"] if ec in contratos_por_ec else ""
+        texto_tabela = " ".join(f"{c['obs']} {c['comentario_celula']}" for c in contratos_por_ec.get(ec, []))
+        inativo = "inativo" in norm_cabecalho(texto_tabela)
+        if inativo:
+            obs = (obs + "; " if obs else "") + "lojista inativo na planilha"
         linhas.append({
-            "ec": ec, "status": status, "faturavel": status == "CONFIRMADO", "lojista_id": "", "cnpj": cnpj,
-            "nome_tabela": nome_tabela, "nomes_orbe": " | ".join(sorted(nomes[ec])), "n_linhas_orbe": n_linhas[ec],
-            "fonte_mapeamento": fonte, "sugestao_cnpj": sugestao_cnpj, "sugestao_nome_tabela": sugestao_nome,
-            "observacao": obs,
+            "ec": ec, "status": status, "faturavel": status == "CONFIRMADO" and not inativo, "lojista_id": "",
+            "cnpj": cnpj, "nome_tabela": nome_tabela, "nomes_orbe": " | ".join(sorted(nomes[ec])),
+            "n_linhas_orbe": n_linhas[ec], "visto_na_orbe": n_linhas[ec] > 0,
+            "fonte_mapeamento": fonte, "aprovado_por": aprovado, "registrado_em": registrado,
+            "sugestao_cnpj": sugestao_cnpj, "sugestao_nome_tabela": sugestao_nome, "observacao": obs,
         })
     for l in linhas:
         l["lojista_id"] = l["cnpj"] if l["cnpj"] else f"EC{l['ec']}"
     return linhas
+
+
+# ECs que o financeiro respondeu no canal #tarvo-financeiro e o status que cada um TEM que ter na dim_ec.
+# A decisão em si (CNPJ, quem aprovou) vive em config/mapeamento_ec.csv; aqui fica só o contrato de integridade.
+# Se a config perder um desses ECs, a ingestão para em vez de seguir com dado errado.
+ECS_RESPONDIDOS_PELO_FINANCEIRO = {
+    "1043300981": "CONFIRMADO",   # Novo Horizonte Intercâmbio
+    "1043396662": "CONFIRMADO",   # Horizonte Viagens e Turismo (empresa diferente da Novo Horizonte)
+    "1038867654": "CONFIRMADO",   # Kiwi Experience
+    "1076801732": "RETIDO",       # Atlas Idiomas: não faturar até o comercial confirmar a taxa
+}
+
+
+def checar_integridade_dim_ec(dim_ec: list[dict], orbe: list[dict], contratos: list[dict],
+                              overrides: dict[str, dict], ctl: Controle) -> None:
+    """Para a ingestão (ValueError) se a dim_ec estiver incompleta ou contradisser o que o financeiro respondeu."""
+    por_ec = {e["ec"]: e for e in dim_ec}
+    erros = []
+    if len(por_ec) != len(dim_ec):
+        erros.append("EC repetido na dim_ec")
+    universo = ({ec_texto(r["cod_estabelecimento"]) for r in orbe} | {c["ec"] for c in contratos if c["ec"]}
+                | set(overrides))
+    faltam = sorted(universo - set(por_ec))
+    if faltam:
+        erros.append(f"ECs conhecidos que não entraram na dim_ec: {faltam}")
+    for ec, esperado in ECS_RESPONDIDOS_PELO_FINANCEIRO.items():
+        atual = por_ec.get(ec, {}).get("status")
+        if atual != esperado:
+            erros.append(f"EC {ec}: esperado {esperado}, encontrado {atual}")
+        elif esperado == "CONFIRMADO" and not por_ec[ec]["cnpj"]:
+            erros.append(f"EC {ec} CONFIRMADO sem CNPJ")
+    ctl.verifica("dim_ec", "dim_ec_cobre_orbe_tabela_e_config", not faltam,
+                 f"ECs no universo={len(universo)}; na dim_ec={len(por_ec)}")
+    ctl.verifica("dim_ec", "ecs_respondidos_pelo_financeiro_com_status_esperado",
+                 all(por_ec.get(ec, {}).get("status") == s for ec, s in ECS_RESPONDIDOS_PELO_FINANCEIRO.items()),
+                 ", ".join(f"{ec}={s}" for ec, s in ECS_RESPONDIDOS_PELO_FINANCEIRO.items()))
+    ctl.add("CONTAGEM", "dim_ec", "ecs_so_na_tabela_ou_config_sem_venda_no_mes",
+            sum(1 for e in dim_ec if not e["visto_na_orbe"]),
+            ", ".join(f"{e['ec']} ({e['nome_tabela'] or 'sem nome'})" for e in dim_ec if not e["visto_na_orbe"]))
+    if erros:
+        raise ValueError("Integridade da dim_ec violada: " + "; ".join(erros))
 
 
 def construir_dim_lojista(contratos: list[dict], dim_ec: list[dict], ponte: list[dict]) -> list[dict]:
@@ -452,7 +589,7 @@ def construir_dim_lojista(contratos: list[dict], dim_ec: list[dict], ponte: list
             "ativo": "inativo" not in norm_cabecalho(texto_obs), "linha_checkout": bool(tem_taxa or ecs_por_cnpj.get(cnpj)),
             "linha_remessa": remessa, "status_cadastro": "NA_TABELA",
             "obs_tabela": " | ".join(x for x in {r["obs"] for r in rows} if x),
-            "linha_planilha": " | ".join(str(r["linha_planilha"]) for r in rows),
+            "linha_planilha": " | ".join(str(n) for n in sorted({r["linha_planilha"] for r in rows})),
         })
     for e in dim_ec:
         if not e["cnpj"] and e["status"] == "RETIDO":
@@ -507,18 +644,38 @@ def construir_fato_orbe(orbe: list[dict], dim_ec: list[dict], arquivo: str, comp
     return linhas
 
 
-def construir_fato_ponte(ops: list[dict], arquivo: str, competencia: str, ctl: Controle) -> list[dict]:
+def construir_fato_ponte(ops: list[dict], arquivo: str, competencia: str, contratos: list[dict],
+                         params: dict[str, float], ctl: Controle) -> list[dict]:
     vistos: Counter = Counter()
     linhas = []
+    cnpjs_tabela = {c["cnpj"] for c in contratos}
+
+    def spread_contratado(cnpj: str, data: str) -> float | None:
+        """Spread contratado (ou o padrão, se a célula está em branco) vigente na data de contratação."""
+        rows = [c for c in contratos if c["cnpj"] == cnpj]
+        if not rows:
+            return None
+        vig = [c for c in rows if (not c["vigencia_ini"] or c["vigencia_ini"] <= data)
+               and (not c["vigencia_fim"] or c["vigencia_fim"] >= data)]
+        return (vig or rows)[0]["spread_remessa_efetivo_pct"]
+
     for o in ops:
         vistos[o["num_op"]] += 1
         cnpj, ajustado = cnpj14(o["cnpj"])
         spread = num_ponto(o["spread_brl"])
         frac = num_ponto(o["spread_pct"])
+        d_contr, d_liq = data_serial_excel(o["data_contratacao"]), data_serial_excel(o["data_liquidacao"])
+        pct = None if frac is None else round(frac * 100, 4)
+        contratado = spread_contratado(cnpj, d_contr)
         linhas.append({
+            "mes_contratacao": d_contr[:7], "flag_liquidacao_mes_seguinte": d_liq[:7] != d_contr[:7],
+            "spread_contratado_pct": contratado,
+            "flag_spread_diverge": (contratado is not None and pct is not None
+                                    and abs(pct - contratado) > params["tolerancia_spread_pp"]),
+            "flag_cnpj_fora_da_tabela": cnpj not in cnpjs_tabela,
             "competencia": competencia, "arquivo_origem": arquivo, "linha_origem": o["_linha"],
-            "num_op": o["num_op"], "data_contratacao": data_serial_excel(o["data_contratacao"]),
-            "data_liquidacao": data_serial_excel(o["data_liquidacao"]), "cnpj": cnpj, "cnpj_ajustado": ajustado,
+            "num_op": o["num_op"], "data_contratacao": d_contr,
+            "data_liquidacao": d_liq, "cnpj": cnpj, "cnpj_ajustado": ajustado,
             "cliente_nome": o["cliente"], "moeda": o["moeda"], "valor_me": round(num_ponto(o["valor_me"]), 2),
             "taxa_cliente": round(num_ponto(o["taxa_cliente"]), 6), "ptax": round(num_ponto(o["ptax"]), 6),
             "valor_brl": round(num_ponto(o["valor_brl"]), 2), "spread_brl": round(spread, 2),
@@ -533,7 +690,14 @@ def construir_fato_ponte(ops: list[dict], arquivo: str, competencia: str, ctl: C
     ctl.add("CONTAGEM", "ponte", "linhas_duplicadas", sum(1 for l in linhas if l["flag_duplicata"]),
             ", ".join(n for n, q in por_num.items() if q > 1))
     ctl.add("CONTAGEM", "ponte", "spreads_negativos", sum(1 for l in linhas if l["flag_spread_negativo"]))
-    ctl.add("CONTAGEM", "ponte", "operacoes_com_ressalva", sum(1 for l in linhas if l["flag_ressalva"]))
+    ctl.add("CONTAGEM", "ponte", "operacoes_com_ressalva", sum(1 for l in linhas if l["flag_ressalva"]),
+            "o status de compliance não muda nada para a Tarvo (financeiro)")
+    ctl.add("CONTAGEM", "ponte", "liquidadas_no_mes_seguinte", sum(1 for l in linhas if l["flag_liquidacao_mes_seguinte"]),
+            "vale a data de contratação (financeiro)")
+    ctl.add("CONTAGEM", "ponte", "spreads_fora_da_tolerancia",
+            sum(1 for l in linhas if l["flag_spread_diverge"] and not l["flag_duplicata"]),
+            f"tolerância {params['tolerancia_spread_pp']} p.p. contra o spread contratado (padrão {params['spread_padrao_pct']}%)")
+    ctl.add("CONTAGEM", "ponte", "cnpj_fora_da_tabela", sum(1 for l in linhas if l["flag_cnpj_fora_da_tabela"]))
     total = next((l for l in ctl.linhas if l["fonte"] == "ponte" and l["item"] == "total_declarado_operacoes"), None)
     if total is not None:
         ctl.verifica("ponte", "linhas_lidas_igual_total_declarado", len(linhas) == int(total["valor"]),
@@ -544,6 +708,23 @@ def construir_fato_ponte(ops: list[dict], arquivo: str, competencia: str, ctl: C
         ctl.verifica("ponte", "soma_spread_igual_total_declarado", abs(soma - float(spread_decl["valor"])) < 0.005,
                      f"soma={soma}; declarado={spread_decl['valor']}")
     return linhas
+
+
+PROVISIONADOS = {"PAGTO SALARIOS", "GPS INSS", "GRF FGTS", "DEBITO DARF", "PAGTO ISS"}
+
+
+def enriquecer_banco(registros: list[dict], ctl: Controle) -> None:
+    """Acrescenta duas colunas que ajudam a classificar com contrapartida:
+    competencia_declarada (mm/aaaa que o banco escreveu na descrição) e provisionado_antes (regra do financeiro)."""
+    for r in registros:
+        m = re.search(r"\b(\d{2})/(20\d{2})\b", r["descricao"])
+        r["competencia_declarada"] = f"{m.group(2)}-{m.group(1)}" if m else ""
+        comissao_ponte = r["tipo_lancamento"] == "TED RECEB" and "PONTE" in r["contraparte"].upper()
+        r["provisionado_antes"] = r["tipo_lancamento"] in PROVISIONADOS or comissao_ponte
+    ctl.add("REGRA", "fato_banco", "provisionado_antes",
+            sum(1 for r in registros if r["provisionado_antes"]),
+            "folha, GPS, GRF, DARF e ISS do mês anterior e o repasse de comissão da Ponte já estavam registrados; "
+            "o pagamento baixa a provisão (Helena, financeiro, canal #tarvo-financeiro)")
 
 
 # ----------------------------------------------------------------------------- principal
@@ -569,19 +750,43 @@ def executar(mes: str, entrada: Path, saida: Path) -> dict[str, int]:
     plano = ler_plano(f_plano, ctl)
     aurora = ler_aurora(f_aurora, mes, ctl)
     meridiano = ler_meridiano(f_meridiano, mes, ctl)
-    overrides = ler_overrides(Path(__file__).resolve().parent.parent / "config" / "mapeamento_ec.csv")
+    # Decisões confirmadas pelo financeiro (config/): mapeamento de EC, condições comerciais e parâmetros.
+    overrides = ler_overrides()
+    params = ler_parametros()
+    ctl.add("REGRA", "parametros", "spread_padrao_pct", params["spread_padrao_pct"],
+            "célula em branco ou 'padrão' na tabela = 1,5% sobre a PTAX (Helena, financeiro)")
+    ctl.add("REGRA", "parametros", "tolerancia_spread_pp", params["tolerancia_spread_pp"],
+            "critério da equipe, escrito com motivo; o financeiro pediu não receber alarme de centavo")
+    n_vinculos = vincular_ecs(contratos, overrides)
+    ctl.add("CONTAGEM", "dim_ec", "linhas_da_tabela_com_ec_confirmado_pelo_financeiro", n_vinculos)
+    contratos = aplicar_condicoes(contratos, ler_config("condicoes_comerciais.csv"), ctl)
+    for c in contratos:
+        c["spread_remessa_efetivo_pct"] = (c["spread_remessa_pct"] if c["spread_remessa_pct"] is not None
+                                          else params["spread_padrao_pct"])
 
     dim_ec = construir_dim_ec(orbe_raw, contratos, overrides)
+    checar_integridade_dim_ec(dim_ec, orbe_raw, contratos, overrides, ctl)
     dim_lojista = construir_dim_lojista(contratos, dim_ec, ponte_raw)
     contratos_out = montar_contratos(contratos)
     fato_orbe = construir_fato_orbe(orbe_raw, dim_ec, f_orbe.name, mes, ctl)
-    fato_ponte = construir_fato_ponte(ponte_raw, arquivo_ponte, mes, ctl)
+    fato_ponte = construir_fato_ponte(ponte_raw, arquivo_ponte, mes, contratos, params, ctl)
     fato_banco = aurora + meridiano
+    enriquecer_banco(fato_banco, ctl)
 
     ctl.verifica("tabela_taxas", "cnpj_com_14_digitos", not any(c["cnpj_ajustado"] for c in contratos),
                  f"ajustados={sum(1 for c in contratos if c['cnpj_ajustado'])} (zero à esquerda restaurado)")
     ctl.add("CONTAGEM", "dim_ec", "ecs_nao_confirmados", sum(1 for e in dim_ec if e["status"] != "CONFIRMADO"),
             ", ".join(f"{e['ec']}={e['status']}" for e in dim_ec if e["status"] != "CONFIRMADO"))
+    pendentes = [e["ec"] for e in dim_ec if e["status"] == "PENDENTE"]
+    ctl.verifica("dim_ec", "nenhum_ec_da_orbe_sem_mapeamento", not pendentes,
+                 f"pendentes={pendentes}" if pendentes else "todos os ECs da Orbe estão CONFIRMADO ou RETIDO")
+    ecs_confirmados_financeiro = sorted(e["ec"] for e in dim_ec if e["fonte_mapeamento"] == "config/mapeamento_ec.csv"
+                                        and e["status"] == "CONFIRMADO")
+    ctl.add("CONTAGEM", "dim_ec", "ecs_confirmados_pelo_financeiro", len(ecs_confirmados_financeiro),
+            ", ".join(ecs_confirmados_financeiro))
+    ctl.verifica("fato_orbe", "linhas_com_cnpj_ou_retidas",
+                 all(l["cnpj"] or l["status_ec"] == "RETIDO" for l in fato_orbe),
+                 "toda linha da Orbe tem CNPJ, exceto as da EC retida (Atlas)")
     ctl.verifica("fato_banco", "ref_origem_unico", len({(b["banco"], b["ref_origem"]) for b in fato_banco}) == len(fato_banco))
 
     saida = Path(saida)

@@ -1,5 +1,5 @@
 lojista_id;cnpj;cnpj_ajustado;nome_canonico;nomes_alternativos;ecs;ativo;linha_checkout;linha_remessa;status_cadastro;obs_tabela;linha_planilha
-22224579000109;22224579000109;N;Escola Bridge de Idiomas Ltda;BRIDGE IDIOMAS | Bridge Idiomas (NOVA) | ESCOLA BRIDGE IDIOMAS;1075624862;S;S;N;NA_TABELA;renegociado - ver linha de baixo | só mudou o crédito à vista;6 | 7
+22224579000109;22224579000109;N;Escola Bridge de Idiomas Ltda;BRIDGE IDIOMAS | Bridge Idiomas (NOVA) | ESCOLA BRIDGE IDIOMAS;1075624862;S;S;N;NA_TABELA;só mudou o crédito à vista | renegociado - ver linha de baixo;6 | 7
 78576234000179;78576234000179;N;Horizonte Viagens;HORIZONTE VIAGENS TURISMO;1043396662;S;S;N;NA_TABELA;;8
 07752116000126;07752116000126;N;Kiwi Experience;KIWI EXPERIENCE TURI | KIWI EXPERIENCE TURISMO;1038867654;S;S;S;NA_TABELA;EC pendente;9
 95927868000148;95927868000148;N;Rota Global Intercâmbio Ltda;ROTA GLOBAL INTERCAMBIO | ROTA GLOBAL INTERCÂM;1074504011;S;S;S;NA_TABELA;;10
@@ -22,5 +22,5 @@ lojista_id;cnpj;cnpj_ajustado;nome_canonico;nomes_alternativos;ecs;ativo;linha_c
 67869675000142;67869675000142;N;Bem-Vindo Exchange Ltda;BEM VINDO EXCHANGE | BEM-VINDO EXCHANGE | BEM-VINDO EXCHANGE L;1098729012;S;S;S;NA_TABELA;;27
 66564512000199;66564512000199;N;Novo Horizonte Intercambio;HORIZONTE INTERCAMBIO | NOVO HORIZONTE INTER;1043300981;S;S;S;NA_TABELA;;28
 53857560000123;53857560000123;N;Canguru;CANGURU INTERCAMBIO | CANGURU INTERCAMBIOS | CANGURU INTERCÂMBIOS;1061760196;S;S;S;NA_TABELA;;29
-22348118000148;22348118000148;N;Globo Trotter Viagens Ltda;;;N;S;N;NA_TABELA;INATIVO desde jul/26;30
-EC1076801732;;N;ATLAS IDIOMAS;;1076801732;S;S;N;SEM_CADASTRO_NA_TABELA;Manuel (canal #tarvo-financeiro): nao faturar a Atlas ate confirmacao do comercial;
+22348118000148;22348118000148;N;Globo Trotter Viagens Ltda;;1157874034;N;S;N;NA_TABELA;INATIVO desde jul/26;30
+EC1076801732;;N;ATLAS IDIOMAS;;1076801732;S;S;N;SEM_CADASTRO_NA_TABELA;Atlas Idiomas: transacionando desde 10/09 sem contrato assinado na planilha vigente. Nao faturar ate o comercial confirmar a taxa. Quando confirmada a taxa vale desde 10/09 e setembro e faturado junto com outubro;

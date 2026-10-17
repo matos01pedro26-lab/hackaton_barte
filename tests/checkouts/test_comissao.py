@@ -143,6 +143,20 @@ class ComissaoPorLojista(unittest.TestCase):
             self.assertEqual(p["quem_decide"], "Financeiro")
             self.assertEqual(soma_rastro(r, p["id_saida"]), p["valor_brl"])
 
+    def test_condicao_ja_aplicada_pela_ingestao_mantem_o_valor_que_a_planilha_cobraria(self):
+        # src.ingestao grava a condição como linha CONFIG em dim_contrato_taxa e encerra a linha da planilha na véspera
+        contratos = [contrato(fim="2026-08-31", origem_condicao="TABELA"),
+                     contrato(ini="2026-09-01", fim="2026-12-31", origem_condicao="CONFIG", taxa_debito_pct="0",
+                              taxa_credito_vista_pct="0", taxa_credito_2_6x_pct="0", taxa_credito_7_12x_pct="0",
+                              taxa_pix_pct="0", taxa_antecipacao_pct="0"),
+                     contrato(ini="2027-01-01", origem_condicao="TABELA (retomada)")]
+        r = calcular(entrada([transacao("TX1", bruto="1000.00")], contratos=contratos, condicoes=[condicao()]))
+
+        self.assertEqual(r.comissoes[0]["comissao_brl"], Decimal("0.00"))
+        cond = next(p for p in r.pendencias if p["tipo"] == "CADASTRO_CONDICAO")
+        self.assertEqual(cond["valor_brl"], Decimal("26.90"))  # 2,69% da planilha, não os 0% da linha CONFIG
+        self.assertEqual(soma_rastro(r, cond["id_saida"]), cond["valor_brl"])
+
     def test_resultado_nao_depende_da_ordem_das_linhas_de_entrada(self):
         linhas = [transacao("TX3", cnpj=CNPJ_B, bruto="10.00"), transacao("TX1", bruto="1000.00"),
                   transacao("TX9", ec="1076801732", status_ec="RETIDO", bruto="5.00"),

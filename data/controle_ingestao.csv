@@ -26,6 +26,13 @@ ARQUIVO;meridiano;sha256;27f11fae20c1fb69e2ca47885f6082690fe5db5cd13ddf3e407ef3c
 CONTAGEM;meridiano;linhas_lidas;100;
 CONTAGEM;meridiano;saldo_final_informado;1320453.26;"o OFX não traz saldo inicial; não dá para recalcular"
 VERIFICACAO;meridiano;fitid_unico;OK;duplicados=0
+REGRA;parametros;spread_padrao_pct;1.5;célula em branco ou 'padrão' na tabela = 1,5% sobre a PTAX (Helena, financeiro)
+REGRA;parametros;tolerancia_spread_pp;0.01;"critério da equipe, escrito com motivo; o financeiro pediu não receber alarme de centavo"
+CONTAGEM;dim_ec;linhas_da_tabela_com_ec_confirmado_pelo_financeiro;3;
+REGRA;condicoes_comerciais;00520815000100 de 2026-09-01 a 2026-12-31;taxa_debito_pct=0.0, taxa_credito_vista_pct=0.0, taxa_credito_2_6x_pct=0.0, taxa_credito_7_12x_pct=0.0, taxa_pix_pct=0.0, taxa_antecipacao_pct=0.0;Casa do Estudante: tarifa zerada no checkout de setembro a dezembro (MDR e antecipacao) por acordo do comercial. Remessa segue normal. A Orbe nao foi avisada e cobrou, o cobrado e devolvido ao lojista | aprovado por Comercial (informado pela Helena do financeiro) em 2026-10-16
+VERIFICACAO;dim_ec;dim_ec_cobre_orbe_tabela_e_config;OK;"ECs no universo=23; na dim_ec=23"
+VERIFICACAO;dim_ec;ecs_respondidos_pelo_financeiro_com_status_esperado;OK;1043300981=CONFIRMADO, 1043396662=CONFIRMADO, 1038867654=CONFIRMADO, 1076801732=RETIDO
+CONTAGEM;dim_ec;ecs_so_na_tabela_ou_config_sem_venda_no_mes;1;1157874034 (Globo Trotter Viagens Ltda)
 VERIFICACAO;orbe;id_transacao_unico;OK;duplicados=0
 VERIFICACAO;orbe;valor_taxa_igual_bruto_x_taxa_truncado;OK;linhas_com_diferenca=0 (a Orbe trunca em centavos)
 VERIFICACAO;orbe;liquido_igual_bruto_menos_taxa;OK;linhas_com_diferenca=0
@@ -34,11 +41,18 @@ CONTAGEM;orbe;linhas_em_ec_nao_confirmado;57;
 CONTAGEM;ponte;operacoes_unicas;232;
 CONTAGEM;ponte;linhas_duplicadas;1;PC-0926-0162
 CONTAGEM;ponte;spreads_negativos;4;
-CONTAGEM;ponte;operacoes_com_ressalva;16;
+CONTAGEM;ponte;operacoes_com_ressalva;16;o status de compliance não muda nada para a Tarvo (financeiro)
+CONTAGEM;ponte;liquidadas_no_mes_seguinte;6;vale a data de contratação (financeiro)
+CONTAGEM;ponte;spreads_fora_da_tolerancia;27;tolerância 0.01 p.p. contra o spread contratado (padrão 1.5%)
+CONTAGEM;ponte;cnpj_fora_da_tabela;0;
 VERIFICACAO;ponte;linhas_lidas_igual_total_declarado;OK;"lidas=233; declarado=233"
 VERIFICACAO;ponte;soma_spread_igual_total_declarado;OK;"soma=78073.59; declarado=78073.59"
+REGRA;fato_banco;provisionado_antes;8;"folha, GPS, GRF, DARF e ISS do mês anterior e o repasse de comissão da Ponte já estavam registrados; o pagamento baixa a provisão (Helena, financeiro, canal #tarvo-financeiro)"
 VERIFICACAO;tabela_taxas;cnpj_com_14_digitos;ALERTA;ajustados=2 (zero à esquerda restaurado)
 CONTAGEM;dim_ec;ecs_nao_confirmados;1;1076801732=RETIDO
+VERIFICACAO;dim_ec;nenhum_ec_da_orbe_sem_mapeamento;OK;todos os ECs da Orbe estão CONFIRMADO ou RETIDO
+CONTAGEM;dim_ec;ecs_confirmados_pelo_financeiro;3;1038867654, 1043300981, 1043396662
+VERIFICACAO;fato_orbe;linhas_com_cnpj_ou_retidas;OK;toda linha da Orbe tem CNPJ, exceto as da EC retida (Atlas)
 VERIFICACAO;fato_banco;ref_origem_unico;OK;
 VERIFICACAO;orbe;linhas_lidas_igual_gravadas;OK;"lidas=1943; gravadas=1943"
 VERIFICACAO;ponte;linhas_lidas_igual_gravadas;OK;"lidas=233; gravadas=233"

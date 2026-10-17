@@ -58,6 +58,14 @@ def taxa_planilha(cnpj: str, faixa: str, dia: str, contratos: list[dict]) -> Dec
     vigentes = [c for c in contratos if c["cnpj"] == cnpj and vigente(c["vigencia_ini"], c["vigencia_fim"], dia)]
     if len(vigentes) != 1:
         raise SemTaxa(f"{len(vigentes)} contratos vigentes em {dia} para o CNPJ {cnpj} na planilha de taxas")
+    if vigentes[0].get("origem_condicao") == "CONFIG":
+        # src.ingestao já gravou a condição de config/ como linha nova; a taxa da planilha é a da linha original
+        originais = [c for c in contratos if c["cnpj"] == cnpj and c.get("origem_condicao") == "TABELA"
+                     and c["linha_planilha"] == vigentes[0]["linha_planilha"]]
+        if len(originais) != 1:
+            raise SemTaxa(f"{len(originais)} linhas originais da planilha (linha {vigentes[0]['linha_planilha']}) "
+                          f"para a condição vigente em {dia} do CNPJ {cnpj}")
+        vigentes = originais
     taxa = vigentes[0][FAIXA_COLUNA[faixa]]
     if not taxa:
         raise SemTaxa(f"taxa de {faixa} em branco na planilha (linha {vigentes[0]['linha_planilha']}) "
