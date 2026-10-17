@@ -3,6 +3,10 @@
 Uso (a partir da raiz do repositório):
     python -m src.fechar --mes 2026-09                       # lê input/, grava data/ e saida/
     python -m src.fechar --mes 2026-10 --entrada /caminho/dos/arquivos-do-mes
+    python -m src.fechar --mes 2026-10 --sem-arquivar        # rodada de teste: não grava em fechamentos/
+
+Quando o validador passa, o mês é arquivado em fechamentos/AAAA-MM/ (src.historico) e não reabre: rodar de novo um mês
+fechado para com aviso, a não ser com --refazer. O histórico também impede faturar de novo o que um mês fechado já faturou.
 
 O mês é sempre informado: nada no código está fixo em um mês. Os arquivos do mês ficam todos na pasta de entrada.
 Não usa chave de API e nenhuma etapa chama IA: as regras vêm do financeiro (config/ e HIPOTESES.md).
@@ -20,7 +24,7 @@ from collections import Counter, defaultdict
 from decimal import Decimal
 from pathlib import Path
 
-from . import consolidar, ingestao, validador
+from . import consolidar, historico, ingestao, validador
 from .checkouts import __main__ as checkouts_cli
 from .remessa import pipeline as remessa_pipeline
 from .utils import MESES
@@ -96,12 +100,17 @@ def _capturar(funcao, *args, **kwargs):
     return resultado, saida.getvalue()
 
 
-def fechar(mes: str, entrada: Path, dados: Path, saida: Path, config: Path) -> dict:
-    """Roda as cinco etapas em sequência. Devolve {'passos': [...], 'validador': {'ok', 'texto'}, 'saida': Path}.
-    Levanta EntradaIncompleta se faltar fonte; ValueError se a saída não passar no validador."""
+def fechar(mes: str, entrada: Path, dados: Path, saida: Path, config: Path, arquivar: bool = False,
+           refazer: bool = False, raiz_hist: Path = historico.RAIZ_HIST) -> dict:
+    """Roda as cinco etapas em sequência. Devolve {'passos': [...], 'validador': {'ok', 'texto'}, 'saida': Path,
+    'ja_faturadas', 'herdadas', 'arquivado'}. Com arquivar=True, grava fechamentos/AAAA-MM/ se o validador passar.
+    Levanta EntradaIncompleta se faltar fonte; ValueError (MesFechado, CobrancaDuplicada…) se não puder fechar."""
     entrada, dados, saida, config = map(Path, (entrada, dados, saida, config))
     if not re.fullmatch(r"20\d\d-(0[1-9]|1[0-2])", mes):
         raise ValueError(f"Mês inválido: {mes!r} (use AAAA-MM, por exemplo 2026-09)")
+    if arquivar and not refazer and historico.esta_fechado(mes, raiz_hist):
+        raise historico.MesFechado(f"{mes} já está fechado em {historico.pasta(mes, raiz_hist)}. Mês fechado não reabre: "
+                                   "o que chegar depois entra no mês aberto. Use --refazer só para corrigir um fechamento errado.")
     faltam, _ = conferir_entrada(entrada)
     if faltam:
         raise EntradaIncompleta("Faltam arquivos do mês em " + str(entrada) + ":\n  - " + "\n  - ".join(faltam))
@@ -116,12 +125,20 @@ def fechar(mes: str, entrada: Path, dados: Path, saida: Path, config: Path) -> d
 
     etapa("Ingestão dos arquivos", ingestao.executar, mes, entrada, dados)
     conferir_competencia(dados, mes)
+    ja_faturadas = historico.conferir(dados, mes, raiz_hist)       # para se a Orbe repetir transação já faturada
     etapa("Comissão de checkout", checkouts_cli.executar, mes, dados, config, saida / "checkouts")
-    etapa("Comissão de remessa", remessa_pipeline.executar, mes, dados, saida / "parcial", config / "remessa.json")
+    etapa("Comissão de remessa", remessa_pipeline.executar, mes, dados, saida / "parcial", config / "remessa.json",
+          frozenset(ja_faturadas))
     etapa("Consolidação (seis arquivos)", consolidar.executar, mes, dados, saida / "checkouts", saida / "parcial", config, saida)
     codigo, texto = _capturar(validador.main, ["--saida", str(saida), "--dados", str(dados)])
     passos.append({"nome": "Validador do rastro", "segundos": 0.0, "log": texto.strip()})
-    return {"passos": passos, "saida": saida, "validador": {"ok": codigo == 0, "texto": texto.strip()}}
+    arquivado = None
+    if arquivar and codigo == 0:
+        arquivado = historico.arquivar(mes, dados, saida, config, resumir(saida, dados)["kpis"], raiz_hist, refazer)
+        passos.append({"nome": "Arquivo do mês (fechamentos/)", "segundos": 0.0, "log": str(arquivado)})
+    return {"passos": passos, "saida": saida, "validador": {"ok": codigo == 0, "texto": texto.strip()},
+            "ja_faturadas": ja_faturadas, "herdadas": historico.pendencias_herdadas(mes, config, raiz_hist),
+            "arquivado": arquivado}
 
 
 # ----------------------------------------------------------------------------- leitura do resultado
@@ -208,6 +225,20 @@ def imprimir_resumo(res: dict, mes: str, saida: Path) -> None:
     print(f"\n  Seis arquivos em {Path(saida).resolve()}")
 
 
+def imprimir_historico(res: dict, mes: str) -> None:
+    if res["ja_faturadas"]:
+        meses = sorted(set(res["ja_faturadas"].values()))
+        print(f"\n  Operações da Ponte já faturadas em {', '.join(meses)}: {len(res['ja_faturadas'])} (contadas uma vez, fora da nota de {mes})")
+    herdadas = res["herdadas"]
+    if herdadas:
+        por_tipo = Counter(p["tipo"] for p in herdadas)
+        print(f"\n  Pendências herdadas ainda abertas: {len(herdadas)} (resolva com uma linha em config/pendencias_resolvidas.csv)")
+        for tipo, q in por_tipo.most_common(5):
+            print(f"    {tipo:<30}{q:>3}")
+    if res["arquivado"]:
+        print(f"\n  Mês arquivado em {res['arquivado']}")
+
+
 def main(argv: list[str] | None = None) -> int:
     with contextlib.suppress(Exception):
         sys.stdout.reconfigure(errors="replace")
@@ -217,9 +248,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dados", default=str(RAIZ / "data"), help="pasta das tabelas padronizadas")
     ap.add_argument("--saida", default=str(RAIZ / "saida"), help="pasta dos seis arquivos finais")
     ap.add_argument("--config", default=str(RAIZ / "config"), help="pasta com as regras como dado")
+    ap.add_argument("--historico", default=str(historico.RAIZ_HIST), help="pasta dos meses fechados")
+    ap.add_argument("--sem-arquivar", action="store_true", help="rodada de teste: não grava o mês em fechamentos/")
+    ap.add_argument("--refazer", action="store_true", help="refaz um mês já fechado (o fechamento anterior fica guardado)")
     a = ap.parse_args(argv)
     try:
-        res = fechar(a.mes, Path(a.entrada), Path(a.dados), Path(a.saida), Path(a.config))
+        res = fechar(a.mes, Path(a.entrada), Path(a.dados), Path(a.saida), Path(a.config),
+                     arquivar=not a.sem_arquivar, refazer=a.refazer, raiz_hist=Path(a.historico))
     except EntradaIncompleta as e:
         print(f"NÃO FECHOU: {e}", file=sys.stderr)
         return 2
@@ -232,6 +267,7 @@ def main(argv: list[str] | None = None) -> int:
     if not res["validador"]["ok"]:
         return 1
     imprimir_resumo(resumir(a.saida, a.dados), a.mes, Path(a.saida))
+    imprimir_historico(res, a.mes)
     return 0
 
 

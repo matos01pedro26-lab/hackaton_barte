@@ -40,6 +40,33 @@ python -m unittest discover -s tests -t .     # testes
 
 `consolidar` só grava se o validador passar. `saida/checkouts/` e `saida/parcial/` são saídas intermediárias dos módulos e são mantidas.
 
+## Fechar um mês novo (outubro em diante)
+
+```
+python -m src.fechar --mes 2026-10 --entrada <pasta com os arquivos de outubro>
+```
+
+1. Ponha os arquivos do mês numa pasta, com os mesmos prefixos (`01_orbe…`, `02_tabela_taxas…`, `03_email_ponte…`, `04_plano_de_contas…`, `05a_…aurora…`, `05b_…meridiano…`). Os ajustes tardios da Orbe (`06_orbe_…`) são opcionais.
+2. Rode o comando. Ele para com aviso, sem gravar nada, se faltar arquivo, se as datas não forem do mês pedido, se uma transação da Orbe já tiver sido faturada num mês fechado ou se o validador não fechar.
+3. Se tudo passar, o mês é **arquivado em `fechamentos/AAAA-MM/`** e não reabre (P20). Commite essa pasta: é o histórico que o mês seguinte consulta.
+4. O resumo lista as **pendências herdadas** dos meses anteriores. Quando quem decide resolver uma delas, registre uma linha em `config/pendencias_resolvidas.csv` (`id_saida;resolvido_em;decisao;quem_decidiu`), e ela deixa de ser herdada.
+
+| Pasta | O que guarda |
+|---|---|
+| `fechamentos/AAAA-MM/manifesto.json` | Quando fechou, commit, arquivos de entrada com sha256 e totais |
+| `fechamentos/AAAA-MM/saida/` | Os seis arquivos entregues naquele mês |
+| `fechamentos/AAAA-MM/data/` | `fato_orbe`, `fato_ponte`, `fato_banco`, `dim_ec`, `controle_ingestao` |
+| `fechamentos/AAAA-MM/pendencias_abertas.csv` | Pendências do mês e herdadas ainda abertas, com o mês de origem |
+
+Para uma rodada de teste que não arquiva: `--sem-arquivar`. Para corrigir um mês fechado errado: `--refazer` (o anterior fica guardado em `anterior_<hora>/`).
+
+**Próximos passos** (planejados, ainda não feitos):
+- reconhecer cada arquivo pelo conteúdo, e não pelo prefixo do nome;
+- aceitar arquivo tardio de mês fechado no mês aberto;
+- faturar as linhas retidas da Atlas quando o comercial confirmar a taxa;
+- dar baixa automática nas pendências herdadas: transferência em trânsito, PIX sem operação e ajuste da Ponte;
+- levar as regras de classificação e os nomes de coluna esperados para `config/`.
+
 ## Saídas (`saida/`)
 
 `comissoes_por_lojista.csv`, `divergencias_taxa.csv`, `notas_a_emitir.csv`, `lancamentos_classificados.csv`, `pendencias.csv`, `rastro.csv`. Separador `;`, decimal com ponto e 2 casas, datas ISO, CNPJ com 14 dígitos. Em `rastro.csv`, a soma por `id_saida` é igual ao valor reportado.
