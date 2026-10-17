@@ -43,11 +43,13 @@ def arredondar(valor: Decimal) -> Decimal:
 def classificar(op: Operacao, mes: str, cfg: Config) -> OpClassificada:
     if op.flag_duplicata:
         return OpClassificada(op, Classe.DUPLICATA)
-    if not op.data_contratacao.startswith(mes):
-        return OpClassificada(op, Classe.FORA_COMPETENCIA)
+    # O ajuste vem antes da checagem de mês: ele entra no fechamento do mês em que APARECE no relatório, mesmo que
+    # a data de contratação seja de um mês anterior (regra da Helena). Só operação normal fora do mês fica de fora.
     ajuste = cfg.padrao_ajuste.search(op.observacao)
     if ajuste:
         return OpClassificada(op, Classe.AJUSTE, op_original=ajuste.group(1))
+    if not op.data_contratacao.startswith(mes):
+        return OpClassificada(op, Classe.FORA_COMPETENCIA)
     if op.spread_brl < 0:
         return OpClassificada(op, Classe.SPREAD_NEGATIVO)
     return OpClassificada(op, Classe.NORMAL)
