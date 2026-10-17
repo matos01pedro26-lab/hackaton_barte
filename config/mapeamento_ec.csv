@@ -1,5 +1,5 @@
-ec;cnpj;status;fonte
-1076801732;;RETIDO;Manuel (canal #tarvo-financeiro): nao faturar a Atlas ate confirmacao do comercial
-1038867654;07752116000126;CONFIRMADO;Helena (financeiro): KIWI EXPERIENCE TURISMO e a linha Kiwi Experience da aba vigente
-1043300981;66564512000199;CONFIRMADO;Helena (financeiro): HORIZONTE INTERCAMBIO e a linha Novo Horizonte Intercambio da aba vigente
-1043396662;78576234000179;CONFIRMADO;Helena (financeiro): HORIZONTE VIAGENS TURISMO e a linha Horizonte Viagens da aba vigente (empresa diferente da Novo Horizonte)
+ec;cnpj;status;fonte;pendencia_financeiro
+1076801732;;RETIDO;Manuel (canal #tarvo-financeiro): nao faturar a Atlas ate confirmacao do comercial;
+1038867654;07752116000126;CONFIRMADO;Helena (financeiro): KIWI EXPERIENCE TURISMO e a linha Kiwi Experience da aba vigente;Coluna EC Orbe em branco na planilha de taxas (linha 9, Kiwi Experience, obs "EC pendente"). Preencher com 1038867654 para o mapeamento sair da planilha e nao desta configuracao.
+1043300981;66564512000199;CONFIRMADO;Helena (financeiro): HORIZONTE INTERCAMBIO e a linha Novo Horizonte Intercambio da aba vigente;Coluna EC Orbe em branco na planilha de taxas (linha 28, Novo Horizonte Intercambio). Preencher com 1043300981 para o mapeamento sair da planilha e nao desta configuracao.
+1043396662;78576234000179;CONFIRMADO;Helena (financeiro): HORIZONTE VIAGENS TURISMO e a linha Horizonte Viagens da aba vigente (empresa diferente da Novo Horizonte);Coluna EC Orbe em branco na planilha de taxas (linha 8, Horizonte Viagens). Preencher com 1043396662 para o mapeamento sair da planilha e nao desta configuracao.

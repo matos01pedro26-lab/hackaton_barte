@@ -33,6 +33,8 @@ Fonte: respostas do @manuel.freitas e da Helena (financeiro) no canal `#tarvo-fi
 | R21 | **Tarifas, aluguel/condomínio, cloud e similares entram direto como despesa do mês.** | Contas do grupo 4.2. |
 | R22 | **Os depósitos da Orbe caem integralmente na Aurora.** | Todo TED da Orbe baixa `1.1.03.001 Recebíveis de adquirente - Orbe`. |
 | R23 | **O saldo negativo da Aurora é a conta garantida**, usada para pagar lojistas antecipadamente. | Não é erro nem falta de lançamento. O plano não tem conta de passivo para isso, então o saldo fica credor na própria `1.1.01.001`. |
+| R24 | **Casa do Estudante tem tarifa zerada no checkout de setembro a dezembro/2026** (MDR e antecipação), por acordo do comercial. A Orbe cobrou sem saber: o valor cobrado é divergência, e a Helena devolve. Estorno de venda anterior a setembro usa a taxa da planilha. Fonte: Helena, conforme o `HIPOTESES.md` da branch `remessa` (commit `d9810f5`). | Registrado em `config/condicoes_especiais.csv`. A comissão da Casa cai de R$ 15.391,92 (pela planilha) para −R$ 5,50, porque sobra só o estorno `TX88445133` (débito de venda de 21/08, a 1,49%). Saldo negativo não emite nota e vira pendência para a Helena. |
+| R25 | **Repasse a lojista, pela regra, é só do que a Orbe já liquidou.** Na prática, quando um lojista pressiona, a Bia às vezes paga antes de a Orbe liquidar, usando a conta garantida da Aurora. Isso não está escrito em lugar nenhum e não tem limite. Fonte: Helena, resposta à Turma do Barulho no #tarvo-financeiro (17/10, 10h59). | Não muda a classificação: o PIX de repasse continua baixando `2.1.01.001`, porque a obrigação com o lojista existe desde a venda. Explica por que os repasses (R$ 4,23 mi) superam os TEDs da Orbe (R$ 3,56 mi) e por que a Aurora fica negativa (R23). Sem a regra de liquidação da Orbe, não dá para dizer quais PIX foram antecipados. |
 
 ---
 
@@ -49,6 +51,9 @@ Estas não estão confirmadas. Se alguma estiver errada, o número muda na dire�
 | P9 | **Linha do relatório da Ponte que não é operação de câmbio (ex.: crédito ou débito de ajuste) vira pendência**, fora da comissão e da nota. | O formato do ajuste não está nos dados de setembro; tratar como operação normal poderia faturar um valor errado. | Se o formato for conhecido e a regra clara, vira lançamento e deixa de ser pendência. |
 | P10 | **Operação de spread negativo não entra em `divergencias_taxa`**: já é pendência de contestação (R7, R10). | Evita contar o mesmo problema duas vezes. | As 4 operações apareceriam também como divergência. |
 | P11 | **Classificação contábil dos extratos** segue o mapa da seção 2.1. | Aplica R20 a R23 ao plano Fênix, só em contas analíticas. | Muda a conta de contrapartida, não o valor. |
+| P12 | **Comissão de checkout zero ou negativa fica em `comissoes_por_lojista` com o valor real** e vira pendência `COMISSAO_NAO_POSITIVA` (não emite nota). Em setembro, só a Casa do Estudante (−R$ 5,50, R24). | O número precisa fechar com o rastro; a regra de não emitir é da nota, não da comissão. | Se o gabarito tirar a linha, o total de checkout sobe R$ 5,50 e a Casa sai do arquivo. |
+| P13 | **`id_saida` do checkout**: `CHK-AAAA-MM-<cnpj>` para comissão e `PEN-CHK-AAAA-MM-<tipo>-<ref>` para pendência. | Determinístico e legível; a consolidação com remessa e bancos ainda não definiu um padrão comum. | Só muda o identificador, não os valores. |
+| P14 | **Valor da pendência = o que está em jogo**: EC retido = soma do bruto (não há taxa contratada); cadastro de EC = comissão que depende do mapeamento em `config/`; condição especial = comissão que a planilha cobraria; sem taxa = bruto da transação. | Dá ao financeiro o tamanho de cada decisão, sempre com rastro até as transações. | Só muda a coluna `valor_brl` de `pendencias.csv`. |
 
 ### Detalhe da P9 (contribuição do Gabriel, commit `90d0d6b`; era a "P1" do arquivo dele)
 
@@ -102,6 +107,17 @@ Ordenadas por impacto no número. Antes de perguntar, confirme se a resposta já
 9. **DEVOLUCAO PIX – MUNDO ABERTO (R$ 12.400, Aurora 23/09)**: é um repasse devolvido? Volta para `2.1.01.001` ou vai para `2.1.01.002`?
 10. **Notas fiscais**: regime tributário, retenções e código de serviço.
 
+### 3.1 Pendências de cadastro com o financeiro
+
+São dados que pertencem à planilha de taxas, mantida pelo financeiro, e que só conseguimos perguntando. A solução aplica a resposta por `config/`, mas a planilha continua incompleta. Por isso cada item fica **pendente para o financeiro** até a planilha ser corrigida. A coluna `pendencia_financeiro` dos arquivos de `config/` diz o que corrigir e vai alimentar o `pendencias.csv`. Depois da correção na planilha, a linha correspondente em `config/` pode sair.
+
+| Item | O que falta na planilha | Configuração usada hoje | Base |
+|---|---|---|---|
+| Kiwi Experience | EC Orbe `1038867654` na linha 9 (obs "EC pendente") | `config/mapeamento_ec.csv` | R19 |
+| Horizonte Viagens | EC Orbe `1043396662` na linha 8 | `config/mapeamento_ec.csv` | R19 |
+| Novo Horizonte Intercambio | EC Orbe `1043300981` na linha 28 | `config/mapeamento_ec.csv` | R19 |
+| Casa do Estudante | Taxa zerada de 01/09 a 31/12/2026; a linha 13 só tem o comentário "conversar com Diego (comercial) sobre condição especial" | `config/condicoes_especiais.csv` | R24 |
+
 ---
 
 ## 4. Achados que mudam número
@@ -109,6 +125,7 @@ Ordenadas por impacto no número. Antes de perguntar, confirme se a resposta já
 Números da prévia v2 (notebook `exploracao_inicial.ipynb`, seção 10). São prévias: dependem das premissas acima e não passaram pelo financeiro.
 
 - **Checkout (mapeados)**: R$ 194.943,54 de comissão em 18 lojistas (MDR + antecipação), com 1.653 linhas. **Ainda sem os três ECs da R19**, que somam 233 linhas e cerca de R$ 27,5 mil (Kiwi R$ 10,7 mil, Horizonte Viagens R$ 9,0 mil, Novo Horizonte R$ 7,8 mil), sem divergência de taxa.
+- **Checkout calculado por `src/checkouts` (R1, R2, R8, R13, R19, R24)**: **R$ 207.039,73 em 21 lojistas**, 1.886 linhas no rastro e 57 da Atlas retidas (R3). Bate com uma prévia independente feita antes do código. A diferença para a prévia de R$ 222.437,15 do `analise_exploratoria.ipynb` é a tarifa zerada da Casa do Estudante (R$ 15.397,42 dispensados). São 6 pendências: 4 de cadastro para o financeiro (seção 3.1), Casa negativa (P12) e Atlas (comercial).
 - **Divergências reais de taxa**: 92 linhas, soma R$ 1.575,80 cobrados a mais pela Orbe. Quase tudo é Rota Global (R$ 1.545,86 líquidos) e Bridge (R$ 29,94).
 - **Arredondamento**: 1.561 linhas batem dentro de R$ 0,01 e ficam fora das divergências (R14).
 - **Remessa**: comissão de R$ 39.543,45 para a nota única da Ponte, com 4 spreads negativos fora (R7) e a duplicata contada uma vez (P7).
@@ -117,7 +134,8 @@ Números da prévia v2 (notebook `exploracao_inicial.ipynb`, seção 10). São p
 - **Novo Horizonte**: o CNPJ (66.564.512/0001-99) já estava mapeado na remessa, e o EC de checkout (1043300981) passou a ter mapeamento pela R19. Os dois status agora batem.
 
 - **Remessa fecha com o banco**: cada um dos 21 TEDs para a Ponte é a soma de (Valor R$ + IOF) das operações do mesmo dia, e o PIX de cada lojista no Meridiano é a soma das suas operações (13 de 14 lojistas exatos). A exceção é um PIX **redondo de R$ 18.240,00** da Ponte Aérea em 17/09, sem operação correspondente: pendência.
-- **Checkout não fecha com o banco**: os TEDs da Orbe (R$ 3.557.246,29) não seguem nenhuma regra simples do relatório. Os repasses a lojistas (R$ 4.230.267,61) superam os TEDs em R$ 673.021,32. A diferença é coberta pela conta garantida (R23). Falta a regra de liquidação da Orbe (nova pergunta ao financeiro).
+- **Checkout não fecha com o banco**: os TEDs da Orbe (R$ 3.557.246,29) não seguem nenhuma regra simples do relatório. Os repasses a lojistas (R$ 4.230.267,61) superam os TEDs em R$ 673.021,32. A diferença é coberta pela conta garantida (R23), e a causa é o pagamento antes da liquidação, a critério de quem paga (R25). Falta a regra de liquidação da Orbe para separar o que foi antecipado.
+- **Causa raiz (R25): o caixa depende de uma decisão individual sem regra nem limite.** A Tarvo financia lojistas com a conta garantida sem política escrita, sem limite e sem registro de quem foi antecipado. O caso mais exposto é a Atlas: R$ 249.301,77 pagos em PIX em setembro, sem contrato (R3), depois de antecipar 1,8× o que vendeu no mês. Junto com a planilha de taxas incompleta (seção 3.1) e a condição da Casa do Estudante fora da planilha (R24), é o padrão de "regra que só uma pessoa sabe" que o financeiro descreveu.
 
 ---
 
@@ -126,5 +144,7 @@ Números da prévia v2 (notebook `exploracao_inicial.ipynb`, seção 10). São p
 - **Dados como vêm**: nada é corrigido na origem. Limpeza só em colunas derivadas.
 - **Sem banco transacional**: processamento em lote. Atomicidade por publicação em `saida/` só depois das validações. Ver [notebook, seção 2](exploracao_inicial.ipynb).
 - **IA só onde há ambiguidade**: classificação de lançamentos sem padrão claro e sugestão de lojista por nome (sempre com confiança baixa e revisão humana). Números vêm sempre do código, com rastro.
-- **Mapeamentos e retenções por configuração**: o de-para de EC e as retenções (Atlas) ficam em `config/mapeamento_ec.csv`, não no código, para rodar em outubro sem mexer em `src/`.
+- **Mapeamentos e retenções por configuração**: o de-para de EC e as retenções (Atlas) ficam em `config/mapeamento_ec.csv`, e as condições comerciais fora da planilha (Casa do Estudante) em `config/condicoes_especiais.csv`. Nada disso fica no código, para rodar em outubro sem mexer em `src/`.
+- **Código particionado por domínio**: `src/<dominio>/`, com camadas leves dentro de cada um. O checkout está em `src/checkouts/` (leitura → regras → comissão → saída) e lê só `data/` e `config/`. A ingestão (`src/ingestao.py`) fica como está.
+- **Testes durante o desenvolvimento**: `python -m unittest discover -s tests -t .` (só biblioteca padrão, sem dependência nova, R12). Os testes do checkout cobrem as regras pela interface pública e garantem determinismo: a mesma entrada em qualquer ordem dá o mesmo resultado, e duas execuções geram arquivos idênticos byte a byte.
 - **Versionamento**: um commit por versão, pela skill `commit-versao`.
