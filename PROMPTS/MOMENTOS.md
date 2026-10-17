@@ -35,4 +35,33 @@ Pedi para fechar as hipóteses e as regras de negócio com as respostas da Helen
 ## 3. Desconfiei de 184 lançamentos todos "por regra"
 
 Estranhei que nenhum lançamento saía por IA ou para humano e pedi a origem das 26 regras de classificação. A IA mostrou que o caminho de IA nunca tinha sido ligado e que várias regras eram inferência dela, sem resposta do financeiro; pedi para separar o que era do financeiro, do time e da IA, e as suposições viraram as perguntas da rodada T-800.
->>>>>>> Stashed changes
+
+---
+
+# Momentos que importaram (Marcelo, linha de checkout)
+
+Histórico completo das sessões do Claude Code, na ordem. Os três e-mails pessoais do time viraram `[e-mail pessoal removido]`; o resto está sem edição. Cópia das 17h07 de 17/10 (as sessões seguiram depois disso).
+
+| Sessão | Arquivo | Modelo | O que foi feito |
+|---|---|---|---|
+| 1 | [`marcelo_1_contexto_sessao_claude_code.jsonl`](marcelo_1_contexto_sessao_claude_code.jsonl) | Claude Opus 5.5 (`claude-opus-5-5`) | Exploração dos dados, regras com o financeiro e o primeiro cálculo do checkout |
+| 2 | [`marcelo_2_checkout_e_classificacao_sessao_claude_code.jsonl`](marcelo_2_checkout_e_classificacao_sessao_claude_code.jsonl) | Claude Opus 5.5 (`claude-opus-5-5`) | Divergências e pendências do checkout, conferências independentes e a tentativa do JEV |
+| 3 | [`marcelo_3_fechamento_e_tela_sessao_claude_code.jsonl`](marcelo_3_fechamento_e_tela_sessao_claude_code.jsonl) | Claude Opus 5.5 (`claude-opus-5-5`) | Estudo das saídas, diagrama do fluxo, histórico dos meses fechados e correções da tela e do comando |
+
+Nenhuma sessão chamou subagentes. As personas de revisão do time (Bia, Caio e Helena) estão em `.claude/agents/`, e as skills (`commit-versao`, `consulta`) em `.claude/skills/`.
+
+## 1. A IA quebrou o fechamento ao testar o JEV (erro da IA)
+
+Pedi para trocar as regras de classificação dos extratos por um modelo de decisão barato, o JEV da TypeSafe, com cache e roteamento pela confiança. A IA primeiro disse que não conhecia o modelo e só achou a documentação quando pedi a pesquisa na web. Na implementação, ela acrescentou os limiares de confiança em `config/parametros.csv` com `;` dentro do texto do motivo e rodou só os testes do módulo novo. A ingestão passou a recusar o arquivo, e o fechamento parou na tela ("linha com campos a mais"). A IA corrigiu quando rodou a suíte inteira, mas eu desfiz tudo e pedi um plano filtro a filtro antes de implementar de novo.
+
+## 2. Perguntei se o checkout não deveria ter cruzado com o extrato do banco
+
+A IA não mudou o cálculo só porque perguntei: testou nos dados primeiro. Mostrou que os PIX de repasse não batem com o líquido da Orbe em nenhuma janela (Lisboa recebeu R$ 17.642, contra R$ 161.700 de líquido) e que a regra R24 da Helena dispensa a conciliação parcela a parcela. A comissão continuou vindo do relatório da Orbe pela taxa contratada. Mais tarde pedi uma coluna de "comissão verdadeira" pelo extrato, e a IA mostrou que ela não é calculável com os dados antes de mexer no arquivo.
+
+## 3. Conferência independente da ingestão
+
+Pedi para conferir se as tabelas de `data/` batiam com os arquivos brutos e com o que o checkout usa. A IA escreveu um script de conferência separado da ingestão do Pedro: os dados batiam, mas ela achou uma dependência escondida. A tarifa zerada da Casa do Estudante só vinha de `config/condicoes_especiais.csv`, e sem esse arquivo a comissão total iria para R$ 222.437,15. Decidi não mexer no código perto da entrega e registrar no `HIPOTESES.md` como ponto em aberto (a condição em dois arquivos de config).
+
+## 4. Saídas só com as colunas do edital
+
+No `divergencias_taxa.csv`, a IA propôs colunas a mais (data, tipo, faixa e origem da taxa) para facilitar a conferência. Proibi: as saídas têm exatamente as colunas do edital. A IA deixou essas informações só em memória, para os testes, e a integração com setembro passou a conferir as 7 colunas e os números-alvo do notebook do Pedro (92 divergências, R$ 1.576,23).
