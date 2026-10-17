@@ -1,0 +1,11 @@
+{
+  "participacao_tarvo": "0.5",
+  "spread_padrao_pct": "1.5",
+  "tolerancia_brl": "0",
+  "padrao_ajuste": "^\\s*AJUSTE\\s+REF\\s+(PC-\\d{4}-\\d+)",
+  "quem_decide": {
+    "contestacao_ponte": "Helena/financeiro",
+    "cadastro": "comercial",
+    "nota": "Helena/financeiro"
+  }
+}
