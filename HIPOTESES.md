@@ -298,3 +298,17 @@ Números do notebook `analise_setembro.ipynb` (prévias; o financeiro disse que 
 - **Código particionado por domínio**: `src/<dominio>/`, com camadas leves dentro de cada um. O checkout está em `src/checkouts/` (leitura → regras → comissão e divergência → saída) e lê só `data/` e `config/`. Os CSVs saem com exatamente as colunas do edital.
 - **Testes**: `python -m unittest discover -s tests -t .` (só biblioteca padrão). Os testes do checkout cobrem as regras pela interface pública e garantem determinismo: a mesma entrada em qualquer ordem dá o mesmo resultado, e duas execuções geram os mesmos bytes.
 - **Em aberto: condição da Casa em dois arquivos.** A ingestão aplica `config/condicoes_comerciais.csv` em `dim_contrato_taxa` (linha `CONFIG`), e o checkout lê `config/condicoes_especiais.csv` para a taxa, a devolução e a pendência de cadastro. Os dois dizem 0% de 01/09 a 31/12; unificar em um só antes de outubro.
+
+## 6. Decisão da Helena (17/10): seguir com as premissas
+
+Em 17/10 a Helena informou que as perguntas já têm resposta escrita nas rodadas anteriores do canal e que, a partir daí, o time segue com as premissas e registra no HIPOTESES.md. Aplicado assim:
+
+| Item | Status | Efeito no fechamento |
+|---|---|---|
+| Fluente, Pix a 0,79% | CONFIRMADO (resposta 39, item 7: "não precisa de pendência") | pendência `TAXA_A_CONFIRMAR` fechada; nota segue a 0,79% |
+| Juros da conta garantida | CONFIRMADO (resposta 39, item 1) | pendência `CONTA_GARANTIDA_SEM_ENCARGOS` fechada; nada a lançar em setembro |
+| Razão social da nota | PREMISSA: nome da planilha com o CNPJ, conferido pela Bia na emissão | pendência `RAZAO_SOCIAL_NOTAS` segue na saída como conferência |
+| Valor da Mundo Aberto (R$ 1.418,88) | PREMISSA | valor a pedir na contestação |
+| Duplicata PC-0926-0162 (R$ 410,94) | PREMISSA | entra na contestação pela parte da Tarvo |
+| Casa do Estudante a partir de 2027 | PREMISSA: taxa volta à planilha; renovação é do comercial | sem pendência própria |
+| Prazo da contestação à Ponte | PREMISSA da Helena, com risco: 5 dias úteis do e-mail dão 09/10, já vencido | contestação segue dependendo de data confirmada pela Ponte |

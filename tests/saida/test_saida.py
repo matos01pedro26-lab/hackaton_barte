@@ -106,7 +106,7 @@ class SobreSetembro(unittest.TestCase):
         self.assertEqual(self._pendencia("EC_RETIDO")["base_valor"], "TAXA_ORBE")
 
     def test_referencias_nao_somam(self):
-        for tipo, ref in (("CADASTRO_CONDICAO", D("15397.42")), ("CONTA_GARANTIDA_SEM_ENCARGOS", D("-2289532.94"))):
+        for tipo, ref in (("CADASTRO_CONDICAO", D("15397.42")),):
             p = self._pendencia(tipo)
             self.assertEqual(D(p["valor_brl"]), D("0.00"), tipo)
             self.assertEqual(D(p["valor_referencia_brl"]), ref, tipo)

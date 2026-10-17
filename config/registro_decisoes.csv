@@ -47,9 +47,9 @@ Devolução de R$ 12.400 lançada em 2.1.01.001;PREMISSA;;;duvidas_financeiro.cs
 PIX de R$ 7.350 em 1.1.09.002 e transferência de R$ 300.000 em 1.1.09.001;PREMISSA;;;Escolha da equipe pelo plano de contas (resposta 5 deixa o tratamento com a equipe)
 Operação da Ponte de CNPJ fora da planilha: calcular a nossa metade e abrir pendência de cadastro;PREMISSA;;;duvidas_financeiro.csv resposta 15 (tratamento razoável e registrar como premissa)
 Contas de despesa específicas (4.2.01 a 4.2.06) e Google Workspace em 4.2.04;PREMISSA;;;Helena não valida conta por conta (duvidas_financeiro.csv respostas 23 e 24)
-Fluente: Pix a 0,79% é condição negociada (pendência TAXA_A_CONFIRMAR segue aberta);PREMISSA;;;duvidas_financeiro.csv resposta #39 item 7. A pendência só fecha com confirmação humana
-Juros da conta garantida vêm no extrato do mês seguinte (pendência CONTA_GARANTIDA_SEM_ENCARGOS segue aberta);PREMISSA;;;duvidas_financeiro.csv resposta #39 item 1. A pendência só fecha com confirmação humana
-Razão social do tomador = nome da planilha com o CNPJ (pendência RAZAO_SOCIAL_NOTAS segue aberta);PREMISSA;;;duvidas_financeiro.csv resposta #39 item 4. A pendência só fecha com confirmação humana
+Fluente: Pix a 0,79% é condição negociada (pendência fechada);CONFIRMADO;Helena (financeiro);17/10/2026;duvidas_financeiro.csv resposta 39 item 7 ("não precisa de pendência")
+Juros da conta garantida vêm no extrato do mês seguinte, nada a lançar em setembro (pendência fechada);CONFIRMADO;Helena (financeiro);17/10/2026;duvidas_financeiro.csv resposta 39 item 1
+Razão social do tomador = nome da planilha com o CNPJ, conferido pela Bia na emissão;PREMISSA;Helena (financeiro);17/10/2026;duvidas_financeiro.csv resposta 39 item 4 (seguir com a premissa)
 CNPJ com 14 dígitos (zero à esquerda restaurado na Fluente e na Campus Global);CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 5
 Ponte não retém ISS nem IRRF e o ISS da nota vai no DAMSP do mês seguinte;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 6
 IOF das remessas é do cliente e a Tarvo só repassa à Ponte;CONFIRMADO;Helena (financeiro);;duvidas_financeiro.csv resposta #39 item 3
