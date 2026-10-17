@@ -101,8 +101,9 @@ class Divergencia(unittest.TestCase):
 
     def test_tolerancia_zero_reporta_qualquer_centavo(self):
         por_cnpj = indexar_contratos([contrato(pct="1.5")])
-        dif, _ = calcular_diferencas([classificar(op(spread="75.01"), "2026-09", CFG)], por_cnpj, CFG)
-        linhas, _ = divergencias(dif, CFG)
+        cfg = replace(CFG, tolerancia_brl=D("0"), tolerancia_pp=D("0"))
+        dif, _ = calcular_diferencas([classificar(op(spread="75.01"), "2026-09", cfg)], por_cnpj, cfg)
+        linhas, _ = divergencias(dif, cfg)
         self.assertEqual(len(linhas), 1)
 
     def test_tolerancia_em_pp_ignora_ruido_e_mantem_divergencia_real(self):

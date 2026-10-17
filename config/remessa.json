@@ -2,7 +2,7 @@
   "participacao_tarvo": "0.5",
   "spread_padrao_pct": "1.5",
   "tolerancia_brl": "0",
-  "tolerancia_pp": "0",
+  "tolerancia_pp": "0.005",
   "padrao_ajuste": "^\\s*AJUSTE\\s+REF\\s+(PC-\\d{4}-\\d+)",
   "quem_decide": {
     "contestacao_ponte": "Helena/financeiro",
