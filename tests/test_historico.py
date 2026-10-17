@@ -131,3 +131,34 @@ class MesAnterior(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RodadaQueFalha(unittest.TestCase):
+    """Uma rodada que para no meio não pode deixar data/ e saida/ pela metade (antes, a ingestão já tinha gravado)."""
+
+    @staticmethod
+    def fotografia(pasta: Path) -> dict[str, bytes]:
+        return {str(p.relative_to(pasta)): p.read_bytes() for p in sorted(pasta.rglob("*")) if p.is_file()}
+
+    def test_competencia_errada_nao_altera_data_nem_saida(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            dados, saida = tmp / "data", tmp / "saida"
+            fechar.fechar("2026-09", INPUT, dados, saida, CONFIG, raiz_hist=tmp / "fechamentos")
+            antes = (self.fotografia(dados), self.fotografia(saida))
+            self.assertIn("fato_orbe.csv", antes[0])
+            with self.assertRaises(fechar.CompetenciaDivergente):          # arquivos de setembro pedidos como outubro
+                fechar.fechar("2026-10", INPUT, dados, saida, CONFIG, arquivar=True, raiz_hist=tmp / "fechamentos")
+            self.assertEqual((self.fotografia(dados), self.fotografia(saida)), antes)
+            self.assertFalse(historico.esta_fechado("2026-10", tmp / "fechamentos"))
+
+    def test_rodada_que_passa_publica_nas_pastas_de_destino(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            res = fechar.fechar("2026-09", INPUT, tmp / "data", tmp / "saida", CONFIG, raiz_hist=tmp / "fechamentos")
+            self.assertTrue(res["validador"]["ok"])
+            for n in historico.SAIDAS:
+                self.assertTrue((tmp / "saida" / f"{n}.csv").exists(), n)
+            for sub in ("checkouts", "parcial"):
+                self.assertTrue((tmp / "saida" / sub).is_dir(), sub)
+            self.assertTrue((tmp / "data" / "fato_orbe.csv").exists())

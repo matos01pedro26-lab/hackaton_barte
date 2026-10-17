@@ -18,7 +18,9 @@ import contextlib
 import csv
 import io
 import re
+import shutil
 import sys
+import tempfile
 import time
 from collections import Counter, defaultdict
 from decimal import Decimal
@@ -104,7 +106,10 @@ def fechar(mes: str, entrada: Path, dados: Path, saida: Path, config: Path, arqu
            refazer: bool = False, raiz_hist: Path = historico.RAIZ_HIST) -> dict:
     """Roda as cinco etapas em sequência. Devolve {'passos': [...], 'validador': {'ok', 'texto'}, 'saida': Path,
     'ja_faturadas', 'herdadas', 'arquivado'}. Com arquivar=True, grava fechamentos/AAAA-MM/ se o validador passar.
-    Levanta EntradaIncompleta se faltar fonte; ValueError (MesFechado, CobrancaDuplicada…) se não puder fechar."""
+    Levanta EntradaIncompleta se faltar fonte; ValueError (MesFechado, CobrancaDuplicada…) se não puder fechar.
+
+    Tudo é calculado numa pasta temporária. dados/ e saida/ só recebem o resultado depois que o validador passa:
+    uma rodada que falha (competência errada, cobrança em dobro, validador) não deixa nenhum arquivo pela metade."""
     entrada, dados, saida, config = map(Path, (entrada, dados, saida, config))
     if not re.fullmatch(r"20\d\d-(0[1-9]|1[0-2])", mes):
         raise ValueError(f"Mês inválido: {mes!r} (use AAAA-MM, por exemplo 2026-09)")
@@ -123,17 +128,24 @@ def fechar(mes: str, entrada: Path, dados: Path, saida: Path, config: Path, arqu
         passos.append({"nome": nome, "segundos": round(time.perf_counter() - t0, 2), "log": texto.strip()})
         return resultado
 
-    etapa("Ingestão dos arquivos", ingestao.executar, mes, entrada, dados)
-    conferir_competencia(dados, mes)
-    ja_faturadas = historico.conferir(dados, mes, raiz_hist)       # para se a Orbe repetir transação já faturada
-    etapa("Comissão de checkout", checkouts_cli.executar, mes, dados, config, saida / "checkouts")
-    etapa("Comissão de remessa", remessa_pipeline.executar, mes, dados, saida / "parcial", config / "remessa.json",
-          frozenset(ja_faturadas))
-    etapa("Consolidação (seis arquivos)", consolidar.executar, mes, dados, saida / "checkouts", saida / "parcial", config, saida)
-    codigo, texto = _capturar(validador.main, ["--saida", str(saida), "--dados", str(dados)])
-    passos.append({"nome": "Validador do rastro", "segundos": 0.0, "log": texto.strip()})
+    with tempfile.TemporaryDirectory(prefix=f"fechamento_{mes}_") as tmp:
+        d_tmp, s_tmp = Path(tmp) / "data", Path(tmp) / "saida"
+        etapa("Ingestão dos arquivos", ingestao.executar, mes, entrada, d_tmp)
+        conferir_competencia(d_tmp, mes)
+        ja_faturadas = historico.conferir(d_tmp, mes, raiz_hist)       # para se a Orbe repetir transação já faturada
+        etapa("Comissão de checkout", checkouts_cli.executar, mes, d_tmp, config, s_tmp / "checkouts")
+        etapa("Comissão de remessa", remessa_pipeline.executar, mes, d_tmp, s_tmp / "parcial", config / "remessa.json",
+              frozenset(ja_faturadas))
+        etapa("Consolidação (seis arquivos)", consolidar.executar, mes, d_tmp, s_tmp / "checkouts", s_tmp / "parcial",
+              config, s_tmp)
+        codigo, texto = _capturar(validador.main, ["--saida", str(s_tmp), "--dados", str(d_tmp)])
+        passos.append({"nome": "Validador do rastro", "segundos": 0.0, "log": texto.strip()})
+        if codigo != 0:
+            raise ValueError(f"A saída não passou no validador; {dados} e {saida} não foram alterados.\n{texto.strip()}")
+        shutil.copytree(d_tmp, dados, dirs_exist_ok=True)       # só agora o resultado vai para as pastas de verdade
+        shutil.copytree(s_tmp, saida, dirs_exist_ok=True)
     arquivado = None
-    if arquivar and codigo == 0:
+    if arquivar:                # aqui o validador já passou: se não tivesse passado, a rodada teria parado acima
         arquivado = historico.arquivar(mes, dados, saida, config, resumir(saida, dados)["kpis"], raiz_hist, refazer)
         passos.append({"nome": "Arquivo do mês (fechamentos/)", "segundos": 0.0, "log": str(arquivado)})
     return {"passos": passos, "saida": saida, "validador": {"ok": codigo == 0, "texto": texto.strip()},
