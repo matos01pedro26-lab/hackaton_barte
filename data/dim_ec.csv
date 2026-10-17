@@ -5,10 +5,10 @@ ec;status;faturavel;lojista_id;cnpj;nome_tabela;nomes_orbe;n_linhas_orbe;fonte_m
 1020660828;CONFIRMADO;S;16181276000153;16181276000153;EduAbroad;EDU ABROAD CONSULTORIA | EDUABROAD;100;tabela_taxas;;;
 1023622151;CONFIRMADO;S;61720397000180;61720397000180;Lisboa Cursos e Viagens Ltda;LISBOA CURSOS E VIAGENS | LISBOA CURSOS VIAGENS;76;tabela_taxas;;;
 1037647039;CONFIRMADO;S;17217888000111;17217888000111;Mundo Aberto;MUNDO ABERTO INTERC LTDA | MUNDO ABERTO INTERCAMBIO | Mundo Aberto;168;tabela_taxas;;;
-1038867654;PENDENTE;N;EC1038867654;;;KIWI EXPERIENCE TURISMO;85;;07752116000126;Kiwi Experience;"EC sem mapeamento confirmado; aguardando o financeiro; sugestao por nome, NAO confirmada, nao usada em joins"
+1038867654;CONFIRMADO;S;07752116000126;07752116000126;;KIWI EXPERIENCE TURISMO;85;config/mapeamento_ec.csv;;;Helena (financeiro): KIWI EXPERIENCE TURISMO e a linha Kiwi Experience da aba vigente
 1041180753;CONFIRMADO;S;34671260000100;34671260000100;Maple Study Assessoria Educacional Ltda;MAPLE STUDY | MAPLE STUDY ASSESSORIA;105;tabela_taxas;;;
-1043300981;PENDENTE;N;EC1043300981;;;HORIZONTE INTERCAMBIO;73;;66564512000199;Novo Horizonte Intercambio;"EC sem mapeamento confirmado; aguardando o financeiro; sugestao por nome, NAO confirmada, nao usada em joins"
-1043396662;PENDENTE;N;EC1043396662;;;HORIZONTE VIAGENS TURISMO;75;;78576234000179;Horizonte Viagens;"EC sem mapeamento confirmado; aguardando o financeiro; sugestao por nome, NAO confirmada, nao usada em joins"
+1043300981;CONFIRMADO;S;66564512000199;66564512000199;;HORIZONTE INTERCAMBIO;73;config/mapeamento_ec.csv;;;Helena (financeiro): HORIZONTE INTERCAMBIO e a linha Novo Horizonte Intercambio da aba vigente
+1043396662;CONFIRMADO;S;78576234000179;78576234000179;;HORIZONTE VIAGENS TURISMO;75;config/mapeamento_ec.csv;;;Helena (financeiro): HORIZONTE VIAGENS TURISMO e a linha Horizonte Viagens da aba vigente (empresa diferente da Novo Horizonte)
 1058961395;CONFIRMADO;S;85694108000184;85694108000184;Andes Expedições Ltda;ANDES EXPEDICOES;41;tabela_taxas;;;
 1061760196;CONFIRMADO;S;53857560000123;53857560000123;Canguru;CANGURU INTERCAMBIO | CANGURU INTERCAMBIOS;80;tabela_taxas;;;
 1064304917;CONFIRMADO;S;89779285000114;89779285000114;Sol Nascente Viagens Ltda;SOL NASCENTE VIAGENS;60;tabela_taxas;;;

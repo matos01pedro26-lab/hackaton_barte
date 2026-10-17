@@ -30,7 +30,7 @@ VERIFICACAO;orbe;id_transacao_unico;OK;duplicados=0
 VERIFICACAO;orbe;valor_taxa_igual_bruto_x_taxa_truncado;OK;linhas_com_diferenca=0 (a Orbe trunca em centavos)
 VERIFICACAO;orbe;liquido_igual_bruto_menos_taxa;OK;linhas_com_diferenca=0
 CONTAGEM;orbe;estornos_sem_venda_original_no_arquivo;9;
-CONTAGEM;orbe;linhas_em_ec_nao_confirmado;290;
+CONTAGEM;orbe;linhas_em_ec_nao_confirmado;57;
 CONTAGEM;ponte;operacoes_unicas;232;
 CONTAGEM;ponte;linhas_duplicadas;1;PC-0926-0162
 CONTAGEM;ponte;spreads_negativos;4;
@@ -38,7 +38,7 @@ CONTAGEM;ponte;operacoes_com_ressalva;16;
 VERIFICACAO;ponte;linhas_lidas_igual_total_declarado;OK;"lidas=233; declarado=233"
 VERIFICACAO;ponte;soma_spread_igual_total_declarado;OK;"soma=78073.59; declarado=78073.59"
 VERIFICACAO;tabela_taxas;cnpj_com_14_digitos;ALERTA;ajustados=2 (zero à esquerda restaurado)
-CONTAGEM;dim_ec;ecs_nao_confirmados;4;1038867654=PENDENTE, 1043300981=PENDENTE, 1043396662=PENDENTE, 1076801732=RETIDO
+CONTAGEM;dim_ec;ecs_nao_confirmados;1;1076801732=RETIDO
 VERIFICACAO;fato_banco;ref_origem_unico;OK;
 VERIFICACAO;orbe;linhas_lidas_igual_gravadas;OK;"lidas=1943; gravadas=1943"
 VERIFICACAO;ponte;linhas_lidas_igual_gravadas;OK;"lidas=233; gravadas=233"
