@@ -1,0 +1,17 @@
+# Material do evento (não faz parte da solução)
+01_instrucoes_participantes.docx
+Tarvo_Data_Pack_set2026.zip
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Segredos
+.env
+.env.*
+*.pem
+*.key
+credentials*
