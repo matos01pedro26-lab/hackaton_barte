@@ -1,0 +1,46 @@
+tipo;fonte;item;valor;detalhe
+ARQUIVO;orbe;arquivo;01_orbe_relatorio_comissoes_set2026.csv;encoding=utf-8
+ARQUIVO;orbe;sha256;fdbc2bad2dd38dde8bf3af9d5c1f21116f0eae8d71d6a5a16b0dfd82de3cc7ec;
+CONTAGEM;orbe;linhas_lidas;1943;
+ARQUIVO;tabela_taxas;arquivo;02_tabela_taxas_contratadas.xlsx;"aba=Taxas vigentes; abas ignoradas=['ANTIGO 2025 - nao usar']"
+ARQUIVO;tabela_taxas;sha256;d0c7d2b13ac41c2a036a40362eb26c341666feef74d7199284742c255885dfc4;
+CONTAGEM;tabela_taxas;linhas_lidas;25;
+CONTAGEM;tabela_taxas;comentarios_de_celula;1;
+ARQUIVO;ponte;arquivo;03_email_ponte_cambio_relatorio_set2026.eml;"anexo=PonteCambio_Relatorio_TARVO_092026.xlsx; aba=Operações"
+ARQUIVO;ponte;sha256;f0a86efce698e37811815335429565b85ae12c6536c2c939019d0e756710939d;
+CONTAGEM;ponte;linhas_lidas;233;
+CONTAGEM;ponte;total_declarado_operacoes;233;
+CONTAGEM;ponte;total_declarado_spread_brl;78073.59;
+ARQUIVO;plano_contas;arquivo;04_plano_de_contas_fenix_erp.csv;encoding=cp1252
+ARQUIVO;plano_contas;sha256;fb99c63b151c2a029c86475eb2551e4af7722a055dc24137244a2411e7876d72;
+CONTAGEM;plano_contas;linhas_lidas;52;
+ARQUIVO;aurora;arquivo;05a_extrato_banco_aurora_cc4471_set2026.csv;encoding=utf-8
+ARQUIVO;aurora;sha256;02a9591f95a659ba7d9b26fb6e2521f9fbc1a5a8467f3cf5d2df2ca54ff382c7;
+CONTAGEM;aurora;linhas_lidas;84;
+CONTAGEM;aurora;saldo_anterior;612334.81;
+CONTAGEM;aurora;saldo_final_informado;-1920088.6;
+VERIFICACAO;aurora;saldo_final_recalculado_igual_ao_informado;OK;"calculado=-1920088.6; informado=-1920088.6"
+VERIFICACAO;aurora;saldo_linha_a_linha_confere;OK;linhas_com_diferenca=0
+ARQUIVO;meridiano;arquivo;05b_extrato_banco_meridiano_cc90233_set2026.ofx;encoding=cp1252
+ARQUIVO;meridiano;sha256;27f11fae20c1fb69e2ca47885f6082690fe5db5cd13ddf3e407ef3cb29e33283;
+CONTAGEM;meridiano;linhas_lidas;100;
+CONTAGEM;meridiano;saldo_final_informado;1320453.26;"o OFX não traz saldo inicial; não dá para recalcular"
+VERIFICACAO;meridiano;fitid_unico;OK;duplicados=0
+VERIFICACAO;orbe;id_transacao_unico;OK;duplicados=0
+VERIFICACAO;orbe;valor_taxa_igual_bruto_x_taxa_truncado;OK;linhas_com_diferenca=0 (a Orbe trunca em centavos)
+VERIFICACAO;orbe;liquido_igual_bruto_menos_taxa;OK;linhas_com_diferenca=0
+CONTAGEM;orbe;estornos_sem_venda_original_no_arquivo;9;
+CONTAGEM;orbe;linhas_em_ec_nao_confirmado;290;
+CONTAGEM;ponte;operacoes_unicas;232;
+CONTAGEM;ponte;linhas_duplicadas;1;PC-0926-0162
+CONTAGEM;ponte;spreads_negativos;4;
+CONTAGEM;ponte;operacoes_com_ressalva;16;
+VERIFICACAO;ponte;linhas_lidas_igual_total_declarado;OK;"lidas=233; declarado=233"
+VERIFICACAO;ponte;soma_spread_igual_total_declarado;OK;"soma=78073.59; declarado=78073.59"
+VERIFICACAO;tabela_taxas;cnpj_com_14_digitos;ALERTA;ajustados=2 (zero à esquerda restaurado)
+CONTAGEM;dim_ec;ecs_nao_confirmados;4;1038867654=PENDENTE, 1043300981=PENDENTE, 1043396662=PENDENTE, 1076801732=RETIDO
+VERIFICACAO;fato_banco;ref_origem_unico;OK;
+VERIFICACAO;orbe;linhas_lidas_igual_gravadas;OK;"lidas=1943; gravadas=1943"
+VERIFICACAO;ponte;linhas_lidas_igual_gravadas;OK;"lidas=233; gravadas=233"
+VERIFICACAO;plano_contas;linhas_lidas_igual_gravadas;OK;"lidas=52; gravadas=52"
+VERIFICACAO;bancos;linhas_lidas_igual_gravadas;OK;"lidas=184; gravadas=184"
