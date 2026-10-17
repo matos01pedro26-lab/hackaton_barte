@@ -1,0 +1,15 @@
+{
+  "participacao_tarvo": "0.5",
+  "tolerancia_brl": "0",
+  "padrao_ajuste": "^\\s*AJUSTE\\s+REF\\s+(PC-\\d{4}-\\d+)",
+  "tomador": {
+    "cnpj": "75374179000146",
+    "nome": "Ponte Câmbio S.A.",
+    "fonte": "rodapé do e-mail da Ponte (03_email_ponte_cambio_relatorio_set2026.eml); a nota é única, com a Ponte como tomadora (Helena)"
+  },
+  "quem_decide": {
+    "contestacao_ponte": "Helena/financeiro",
+    "cadastro": "comercial",
+    "nota": "Helena/financeiro"
+  }
+}

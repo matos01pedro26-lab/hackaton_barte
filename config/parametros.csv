@@ -1,3 +1,3 @@
 chave;valor;fonte;aprovado_por;registrado_em
 spread_padrao_pct;1.5;Celula de spread em branco ou 'padrao' na tabela de taxas e 1,5% sobre a PTAX de referencia;Helena (financeiro);2026-10-16
-tolerancia_spread_pp;0.01;O spread da Ponte oscila +-0.002 p.p. em torno do contratado por arredondamento, e abaixo de 0.01 p.p. nao e divergencia. O financeiro disse que o criterio e da equipe se estiver escrito com o motivo;Equipe de dados (a validar com o financeiro);2026-10-17
+tolerancia_spread_pp;0.005;O ruido do spread da Ponte fica em +-0.0016 p.p. em torno do contratado, sem vies por lojista, e a unica divergencia real de setembro (Mundo Aberto) esta em +0.30 p.p. 0.005 p.p. e 3x o ruido e 60x menor que a divergencia real. O financeiro disse que o criterio e da equipe se estiver escrito com o motivo. Estudo em notebooks/remessa_tolerancia.ipynb;Equipe de dados (decisao do grupo em 17/10);2026-10-17
